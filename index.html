@@ -1,0 +1,2879 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Pianotes — Platform Manajemen Les Piano</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Nunito:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #081410;
+    --bg2: #0C1D14;
+    --bg3: #102318;
+    --surface: #162D1F;
+    --surface2: #1C3727;
+    --border: rgba(255,255,255,0.08);
+    --accent: #4DB87A;
+    --accent-light: #7DD4A0;
+    --gold: #C9A84C;
+    --gold-light: #E8C878;
+    --ivory: #EFF5F0;
+    --ivory-dim: #7A9E87;
+    --white: #FFFFFF;
+    --green: #4CAF8A;
+    --red: #E05C6A;
+    --blue: #5C8AE0;
+    --purple: #8A5CE0;
+    --sidebar-w: 240px;
+    --radius: 12px;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--bg);
+    color: var(--ivory);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  h1, h2, h3, .brand {
+    font-family: 'Cormorant Garamond', serif;
+  }
+
+  /* ─── SCREENS ─── */
+  .screen { display: none; }
+  .screen.active { display: flex; }
+
+  /* ─── LOGIN ─── */
+  #screen-login {
+    min-height: 100vh;
+    align-items: center;
+    justify-content: center;
+    flex-direction: column;
+    background: var(--bg);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .login-bg {
+    position: absolute;
+    inset: 0;
+    background: 
+      radial-gradient(ellipse 60% 40% at 20% 80%, rgba(77,184,122,0.10) 0%, transparent 60%),
+      radial-gradient(ellipse 50% 50% at 80% 20%, rgba(77,184,122,0.06) 0%, transparent 60%);
+  }
+
+  .piano-keys-deco {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    display: flex;
+    align-items: flex-end;
+    gap: 3px;
+    padding: 0 20px;
+    opacity: 0.15;
+  }
+
+  .key-w {
+    flex: 1;
+    height: 80px;
+    background: var(--ivory);
+    border-radius: 4px 4px 0 0;
+    max-width: 40px;
+  }
+
+  .key-b {
+    flex: 0 0 24px;
+    height: 48px;
+    background: var(--bg);
+    border: 1px solid rgba(255,255,255,0.1);
+    border-radius: 3px 3px 0 0;
+    margin: 0 -14px;
+    z-index: 1;
+    align-self: flex-start;
+  }
+
+  .login-card {
+    position: relative;
+    z-index: 10;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 48px 40px;
+    width: 420px;
+    box-shadow: 0 32px 80px rgba(0,0,0,0.6);
+  }
+
+  .brand {
+    font-size: 36px;
+    font-weight: 700;
+    color: var(--accent);
+    letter-spacing: -0.5px;
+    text-align: center;
+    margin-bottom: 4px;
+  }
+
+  .brand-sub {
+    text-align: center;
+    color: var(--ivory-dim);
+    font-size: 13px;
+    margin-bottom: 36px;
+    letter-spacing: 1.5px;
+    text-transform: uppercase;
+  }
+
+  .login-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ivory-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+  }
+
+  .role-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 10px;
+    margin-bottom: 28px;
+  }
+
+  .role-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
+    padding: 16px 8px;
+    border: 1.5px solid var(--border);
+    border-radius: var(--radius);
+    background: var(--bg3);
+    cursor: pointer;
+    transition: all .2s;
+    color: var(--ivory-dim);
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  .role-btn:hover { border-color: var(--accent); color: var(--accent); transform: translateY(-2px); }
+  .role-btn.selected { border-color: var(--accent); background: rgba(77,184,122,0.1); color: var(--accent); }
+
+  .role-icon { font-size: 24px; }
+
+  .input-group { margin-bottom: 16px; }
+
+  .input-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--ivory-dim);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+
+  .input-group input {
+    width: 100%;
+    padding: 12px 16px;
+    background: var(--bg3);
+    border: 1.5px solid var(--border);
+    border-radius: 10px;
+    color: var(--ivory);
+    font-family: inherit;
+    font-size: 14px;
+    outline: none;
+    transition: border-color .2s;
+  }
+
+  .input-group input:focus { border-color: var(--accent); }
+
+  .btn-primary {
+    width: 100%;
+    padding: 14px;
+    background: var(--accent);
+    border: none;
+    border-radius: 10px;
+    color: #081410;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all .2s;
+    letter-spacing: 0.5px;
+  }
+
+  .btn-primary:hover { background: var(--accent-light); transform: translateY(-1px); box-shadow: 0 8px 24px rgba(77,184,122,0.3); }
+
+  /* ─── APP LAYOUT ─── */
+  #screen-app {
+    min-height: 100vh;
+    flex-direction: row;
+  }
+
+  /* ─── SIDEBAR ─── */
+  .sidebar {
+    width: var(--sidebar-w);
+    min-height: 100vh;
+    background: var(--bg2);
+    border-right: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    z-index: 100;
+    transition: transform .3s;
+  }
+
+  .sidebar-brand {
+    padding: 24px 20px 20px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-brand .brand { font-size: 26px; text-align: left; margin-bottom: 0; }
+  .sidebar-brand .brand-sub { text-align: left; margin-bottom: 0; font-size: 10px; }
+
+  .sidebar-role-badge {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 3px 10px;
+    background: rgba(77,184,122,0.15);
+    border: 1px solid rgba(77,184,122,0.3);
+    border-radius: 20px;
+    font-size: 11px;
+    color: var(--accent);
+    font-weight: 600;
+  }
+
+  .sidebar-nav {
+    flex: 1;
+    padding: 16px 12px;
+    overflow-y: auto;
+  }
+
+  .nav-section-label {
+    font-size: 10px;
+    font-weight: 700;
+    color: var(--ivory-dim);
+    text-transform: uppercase;
+    letter-spacing: 1.5px;
+    padding: 8px 8px 6px;
+    margin-top: 8px;
+  }
+
+  .nav-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all .15s;
+    color: var(--ivory-dim);
+    font-size: 13.5px;
+    font-weight: 500;
+    margin-bottom: 2px;
+  }
+
+  .nav-item:hover { background: var(--surface2); color: var(--ivory); }
+  .nav-item.active { background: rgba(77,184,122,0.12); color: var(--accent); }
+  .nav-item .nav-icon { font-size: 16px; width: 20px; text-align: center; }
+  .nav-item .nav-badge {
+    margin-left: auto;
+    background: var(--red);
+    color: white;
+    font-size: 10px;
+    font-weight: 700;
+    padding: 2px 6px;
+    border-radius: 10px;
+  }
+
+  .sidebar-footer {
+    padding: 16px 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  .user-info {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px;
+    border-radius: 10px;
+    cursor: pointer;
+  }
+
+  .user-avatar {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent-light));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--bg);
+  }
+
+  .user-name { font-size: 13px; font-weight: 600; color: var(--ivory); }
+  .user-role { font-size: 11px; color: var(--ivory-dim); }
+
+  .btn-logout {
+    margin-left: auto;
+    background: none;
+    border: none;
+    color: var(--ivory-dim);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px;
+    border-radius: 6px;
+    transition: color .2s;
+  }
+  .btn-logout:hover { color: var(--red); }
+
+  /* ─── MAIN CONTENT ─── */
+  .main {
+    margin-left: var(--sidebar-w);
+    flex: 1;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .topbar {
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    background: var(--bg);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .page-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 24px;
+    font-weight: 600;
+    color: var(--ivory);
+  }
+
+  .topbar-right {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .notif-btn {
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 16px;
+    position: relative;
+    transition: background .2s;
+  }
+
+  .notif-btn:hover { background: var(--surface2); }
+
+  .notif-dot {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    width: 8px;
+    height: 8px;
+    background: var(--red);
+    border-radius: 50%;
+    border: 2px solid var(--bg);
+  }
+
+  .content {
+    flex: 1;
+    padding: 28px 32px;
+  }
+
+  /* ─── PAGE SECTIONS ─── */
+  .page { display: none; }
+  .page.active { display: block; }
+
+  /* ─── STATS GRID ─── */
+  .stats-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 16px;
+    margin-bottom: 28px;
+  }
+
+  .stat-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 20px;
+    position: relative;
+    overflow: hidden;
+    transition: transform .2s;
+  }
+
+  .stat-card:hover { transform: translateY(-2px); }
+
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    border-radius: var(--radius) var(--radius) 0 0;
+  }
+
+  .stat-card.gold::before { background: var(--gold); }
+  .stat-card.green::before { background: var(--green); }
+  .stat-card.blue::before { background: var(--blue); }
+  .stat-card.purple::before { background: var(--purple); }
+
+  .stat-icon { font-size: 24px; margin-bottom: 12px; }
+  .stat-value { font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 700; color: var(--ivory); margin-bottom: 4px; }
+  .stat-label { font-size: 12px; color: var(--ivory-dim); font-weight: 500; }
+  .stat-change { font-size: 12px; margin-top: 8px; }
+  .stat-change.up { color: var(--green); }
+  .stat-change.down { color: var(--red); }
+
+  /* ─── GRID LAYOUT ─── */
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; margin-bottom: 20px; }
+  .col-span-2 { grid-column: span 2; }
+
+  /* ─── CARD ─── */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    overflow: hidden;
+  }
+
+  .card-header {
+    padding: 18px 20px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .card-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 18px;
+    font-weight: 600;
+    color: var(--ivory);
+  }
+
+  .card-body { padding: 20px; }
+
+  .btn-sm {
+    padding: 7px 14px;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all .2s;
+    border: none;
+  }
+
+  .btn-gold { background: var(--accent); color: #081410; }
+  .btn-gold:hover { background: var(--accent-light); }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--ivory); }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-ghost { background: var(--surface2); color: var(--ivory-dim); border: none; }
+  .btn-ghost:hover { color: var(--ivory); }
+
+  /* ─── TABLE ─── */
+  .table-wrap { overflow-x: auto; }
+
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13.5px;
+  }
+
+  thead th {
+    padding: 12px 16px;
+    text-align: left;
+    font-size: 11px;
+    font-weight: 700;
+    color: var(--ivory-dim);
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+
+  tbody tr { transition: background .15s; cursor: pointer; }
+  tbody tr:hover { background: var(--surface2); }
+  tbody td { padding: 13px 16px; border-bottom: 1px solid var(--border); color: var(--ivory); }
+  tbody tr:last-child td { border-bottom: none; }
+
+  /* ─── BADGES ─── */
+  .badge {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 20px;
+    font-size: 11px;
+    font-weight: 600;
+  }
+
+  .badge-green { background: rgba(76,175,138,0.15); color: var(--green); }
+  .badge-red { background: rgba(224,92,106,0.15); color: var(--red); }
+  .badge-gold { background: rgba(201,168,76,0.15); color: var(--gold); }
+  .badge-blue { background: rgba(92,138,224,0.15); color: var(--blue); }
+  .badge-gray { background: rgba(255,255,255,0.08); color: var(--ivory-dim); }
+  .badge-accent { background: rgba(77,184,122,0.15); color: var(--accent); }
+
+  /* ─── AVATAR ─── */
+  .avatar {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--bg);
+    flex-shrink: 0;
+  }
+
+  .avatar-row { display: flex; align-items: center; gap: 10px; }
+  .avatar-row span { font-weight: 500; }
+
+  /* ─── SCHEDULE LIST ─── */
+  .schedule-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .schedule-item {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 12px 14px;
+    background: var(--bg3);
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    transition: border-color .2s;
+  }
+
+  .schedule-item:hover { border-color: var(--accent); }
+
+  .schedule-time {
+    font-family: 'Outfit', sans-serif;
+    font-size: 20px;
+    font-weight: 700;
+    color: var(--accent);
+    min-width: 52px;
+    line-height: 1;
+  }
+
+  .schedule-time span { display: block; font-size: 11px; color: var(--ivory-dim); font-family: 'Nunito', sans-serif; font-weight: 500; }
+
+  .schedule-info { flex: 1; }
+  .schedule-name { font-size: 13.5px; font-weight: 600; color: var(--ivory); margin-bottom: 2px; }
+  .schedule-detail { font-size: 12px; color: var(--ivory-dim); }
+  .schedule-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--green); flex-shrink: 0; }
+
+  /* ─── PROGRESS BAR ─── */
+  .progress-wrap { margin-bottom: 12px; }
+  .progress-label { display: flex; justify-content: space-between; margin-bottom: 6px; font-size: 13px; }
+  .progress-label span:first-child { color: var(--ivory); font-weight: 500; }
+  .progress-label span:last-child { color: var(--ivory-dim); }
+  .progress-bar { height: 6px; background: var(--bg3); border-radius: 3px; overflow: hidden; }
+  .progress-fill { height: 100%; border-radius: 3px; background: linear-gradient(90deg, var(--accent), var(--accent-light)); transition: width .6s; }
+
+  /* ─── INVOICE ─── */
+  .invoice-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .invoice-item:last-child { border-bottom: none; }
+  .invoice-murid { font-size: 13.5px; font-weight: 600; color: var(--ivory); margin-bottom: 2px; }
+  .invoice-detail { font-size: 12px; color: var(--ivory-dim); }
+  .invoice-amount { font-family: 'Outfit', sans-serif; font-size: 20px; font-weight: 700; color: var(--gold); text-align: right; }
+  .invoice-amount span { display: block; font-size: 11px; color: var(--ivory-dim); font-family: 'Nunito', sans-serif; font-weight: 500; }
+
+  /* ─── ABSENSI ─── */
+  .absen-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; }
+
+  .absen-cell {
+    aspect-ratio: 1;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    cursor: pointer;
+    transition: transform .15s;
+    border: 1px solid var(--border);
+  }
+
+  .absen-cell:hover { transform: scale(1.05); }
+  .absen-hadir { background: rgba(76,175,138,0.2); }
+  .absen-alpha { background: rgba(224,92,106,0.2); }
+  .absen-reschedule { background: rgba(201,168,76,0.2); }
+  .absen-kosong { background: var(--bg3); }
+
+  /* ─── NOTIFICATION LIST ─── */
+  .notif-list { display: flex; flex-direction: column; gap: 10px; }
+
+  .notif-item {
+    display: flex;
+    gap: 12px;
+    padding: 14px;
+    background: var(--bg3);
+    border-radius: 10px;
+    border-left: 3px solid var(--accent);
+  }
+
+  .notif-item.info { border-left-color: var(--blue); }
+  .notif-item.warn { border-left-color: var(--gold); }
+  .notif-item.success { border-left-color: var(--green); }
+
+  .notif-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .notif-text { font-size: 13px; color: var(--ivory); line-height: 1.5; }
+  .notif-time { font-size: 11px; color: var(--ivory-dim); margin-top: 4px; }
+
+  /* ─── TABS ─── */
+  .tabs { display: flex; gap: 4px; margin-bottom: 20px; background: var(--bg3); padding: 4px; border-radius: 10px; }
+  .tab {
+    flex: 1;
+    padding: 9px;
+    text-align: center;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+    color: var(--ivory-dim);
+    background: none;
+    border: none;
+    font-family: inherit;
+  }
+  .tab.active { background: var(--surface2); color: var(--ivory); }
+
+  /* ─── CATATAN ─── */
+  .catatan-item {
+    padding: 14px;
+    background: var(--bg3);
+    border-radius: 10px;
+    margin-bottom: 10px;
+    border: 1px solid var(--border);
+  }
+
+  .catatan-header { display: flex; justify-content: space-between; margin-bottom: 8px; }
+  .catatan-date { font-size: 12px; color: var(--accent); font-weight: 600; }
+  .catatan-sesi { font-size: 12px; color: var(--ivory-dim); }
+  .catatan-text { font-size: 13px; color: var(--ivory); line-height: 1.6; }
+
+  /* ─── KALENDER MINI ─── */
+  .mini-cal { }
+  .mini-cal-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; }
+  .mini-cal-title { font-family: 'Outfit', sans-serif; font-size: 18px; font-weight: 600; }
+  .mini-cal-nav { display: flex; gap: 6px; }
+  .cal-nav-btn {
+    width: 28px; height: 28px; border-radius: 6px;
+    background: var(--bg3); border: 1px solid var(--border);
+    color: var(--ivory-dim); cursor: pointer; font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .cal-nav-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+  .cal-days-header { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 6px; }
+  .cal-day-name { text-align: center; font-size: 10px; font-weight: 700; color: var(--ivory-dim); text-transform: uppercase; padding: 4px; }
+  .cal-days { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; }
+
+  .cal-day {
+    aspect-ratio: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all .15s;
+    color: var(--ivory);
+  }
+
+  .cal-day:hover { background: var(--surface2); }
+  .cal-day.today { background: var(--accent); color: var(--bg); font-weight: 700; }
+  .cal-day.libur { color: rgba(255,255,255,0.25); }
+  .cal-day.tanggal-merah { color: var(--red); font-weight: 700; }
+  .cal-day.has-event::after { content: ''; display: block; width: 4px; height: 4px; background: var(--accent); border-radius: 50%; position: absolute; bottom: 3px; }
+  .cal-day.has-event { position: relative; }
+  .cal-day.empty { opacity: 0; pointer-events: none; }
+  .cal-day.other-month { opacity: 0.3; }
+
+  /* ─── VIDEO CARD ─── */
+  .video-card {
+    background: var(--bg3);
+    border-radius: 10px;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    transition: transform .2s;
+  }
+  .video-card:hover { transform: translateY(-3px); }
+  .video-thumb {
+    width: 100%;
+    aspect-ratio: 16/9;
+    background: linear-gradient(135deg, var(--bg3), var(--surface2));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 36px;
+    position: relative;
+  }
+  .video-play {
+    position: absolute;
+    width: 44px;
+    height: 44px;
+    background: rgba(77,184,122,0.9);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    cursor: pointer;
+    transition: transform .2s;
+  }
+  .video-play:hover { transform: scale(1.1); }
+  .video-info { padding: 12px; }
+  .video-title { font-size: 13px; font-weight: 600; color: var(--ivory); margin-bottom: 4px; }
+  .video-meta { font-size: 12px; color: var(--ivory-dim); }
+
+  /* ─── GURU TARIF ─── */
+  .tarif-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 0;
+    border-bottom: 1px solid var(--border);
+  }
+  .tarif-row:last-child { border-bottom: none; }
+  .tarif-info { font-size: 13.5px; color: var(--ivory); font-weight: 500; }
+  .tarif-sub { font-size: 12px; color: var(--ivory-dim); margin-top: 2px; }
+  .tarif-amount { font-family: 'Outfit', sans-serif; font-size: 22px; font-weight: 700; color: var(--gold); }
+
+  /* ─── ORTU DASHBOARD ─── */
+  .reminder-banner {
+    background: linear-gradient(135deg, rgba(77,184,122,0.15), rgba(77,184,122,0.05));
+    border: 1px solid rgba(77,184,122,0.3);
+    border-radius: var(--radius);
+    padding: 20px;
+    margin-bottom: 20px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .reminder-icon { font-size: 36px; }
+  .reminder-title { font-family: 'Cormorant Garamond', serif; font-size: 20px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+  .reminder-sub { font-size: 13px; color: var(--ivory-dim); }
+  .reminder-time { margin-left: auto; text-align: right; }
+  .reminder-time .time-big { font-family: 'Outfit', sans-serif; font-size: 32px; font-weight: 700; color: var(--accent); }
+  .reminder-time .time-label { font-size: 12px; color: var(--ivory-dim); }
+
+  /* ─── SMOOTH ANIMATION ─── */
+  .page { animation: fadeIn .3s ease; }
+  @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+
+  /* ─── SEARCH ─── */
+  .search-bar {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 8px 14px;
+    min-width: 220px;
+  }
+  .search-bar input {
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--ivory);
+    font-family: inherit;
+    font-size: 13px;
+    width: 100%;
+  }
+  .search-bar input::placeholder { color: var(--ivory-dim); }
+
+  /* ─── MOBILE TOPBAR ─── */
+  .mobile-toggle {
+    display: none;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 18px;
+    margin-right: 12px;
+  }
+
+  /* ─── SECTION HEADER ─── */
+  .section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 16px;
+  }
+
+  .section-title {
+    font-family: 'Cormorant Garamond', serif;
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--ivory);
+  }
+
+  /* ─── DETAIL INFO ─── */
+  .info-row { display: flex; gap: 8px; padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .info-row:last-child { border-bottom: none; }
+  .info-label { color: var(--ivory-dim); min-width: 140px; font-weight: 500; }
+  .info-value { color: var(--ivory); }
+
+  /* ─── PENGHASILAN CHART ─── */
+  .chart-bars { display: flex; align-items: flex-end; gap: 8px; height: 100px; padding-bottom: 4px; }
+  .chart-bar-wrap { flex: 1; display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .chart-bar { width: 100%; border-radius: 4px 4px 0 0; background: var(--surface2); min-height: 4px; transition: height .4s; }
+  .chart-label { font-size: 10px; color: var(--ivory-dim); }
+
+  @media (max-width: 768px) {
+    .sidebar { transform: translateX(-100%); }
+    .sidebar.open { transform: translateX(0); }
+    .main { margin-left: 0; }
+    .mobile-toggle { display: flex; }
+    .stats-grid { grid-template-columns: 1fr 1fr; }
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+    .col-span-2 { grid-column: span 1; }
+    .content { padding: 20px 16px; }
+    .topbar { padding: 16px; }
+  }
+
+  /* ─── MODAL ─── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.75); z-index: 1000;
+    align-items: center; justify-content: center; padding: 20px;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal-box {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 20px; padding: 32px; width: 100%; max-width: 580px;
+    max-height: 90vh; overflow-y: auto; position: relative;
+    box-shadow: 0 40px 100px rgba(0,0,0,0.6);
+  }
+  .modal-close {
+    position: absolute; top: 16px; right: 16px;
+    background: var(--bg3); border: none; width: 34px; height: 34px;
+    border-radius: 50%; cursor: pointer; font-size: 16px;
+    color: var(--ivory-dim); display: flex; align-items: center;
+    justify-content: center; transition: all .2s;
+  }
+  .modal-close:hover { background: rgba(224,92,106,0.15); color: var(--red); }
+  .modal-title {
+    font-family: 'Cormorant Garamond', serif; font-size: 22px;
+    font-weight: 600; color: var(--ivory); margin-bottom: 22px;
+  }
+  .form-group { margin-bottom: 14px; }
+  .form-group label {
+    display: block; font-size: 11px; font-weight: 700;
+    color: var(--ivory-dim); text-transform: uppercase;
+    letter-spacing: 1px; margin-bottom: 8px;
+  }
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%; padding: 11px 14px; background: var(--bg3);
+    border: 1.5px solid var(--border); border-radius: 10px;
+    color: var(--ivory); font-family: inherit; font-size: 13px;
+    outline: none; transition: border-color .2s;
+  }
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus { border-color: var(--accent); }
+  .form-group select option { background: var(--bg2); }
+  .form-group textarea { resize: vertical; min-height: 80px; }
+  .form-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .form-actions { display: flex; gap: 10px; margin-top: 20px; }
+  .form-section { margin-bottom: 6px; margin-top: 18px; font-size: 11px; font-weight: 700; color: var(--ivory-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+  /* ─── TOAST ─── */
+  #toast {
+    position: fixed; bottom: 28px; left: 50%;
+    transform: translateX(-50%) translateY(80px);
+    background: var(--surface2); color: var(--ivory);
+    padding: 12px 24px; border-radius: 40px; font-size: 13px;
+    font-weight: 600; z-index: 9999; transition: transform .3s;
+    box-shadow: 0 4px 24px rgba(0,0,0,0.5);
+    border: 1px solid var(--border); white-space: nowrap;
+  }
+  #toast.show { transform: translateX(-50%) translateY(0); }
+  #toast.success { background: rgba(77,184,122,0.92); border-color: var(--accent); color: #081410; }
+  #toast.error { background: rgba(224,92,106,0.92); border-color: var(--red); color: #fff; }
+  #toast.info { background: rgba(92,138,224,0.92); border-color: var(--blue); color: #fff; }
+
+  /* ─── UPLOAD BUKTI ─── */
+  .upload-area {
+    border: 2px dashed var(--border); border-radius: 12px;
+    padding: 28px 20px; text-align: center; cursor: pointer;
+    position: relative; transition: border-color .2s; background: var(--bg3);
+  }
+  .upload-area:hover { border-color: var(--accent); }
+  .upload-area input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; width: 100%; height: 100%; }
+  .upload-preview { width: 100%; max-height: 180px; object-fit: contain; border-radius: 10px; margin-top: 12px; display: none; }
+
+  /* ─── SLIP GAJI ─── */
+  .slip-card { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--radius); overflow: hidden; }
+  .slip-head { background: var(--bg3); padding: 20px 24px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); }
+  .slip-body { padding: 20px 24px; }
+  .slip-row { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .slip-row:last-child { border-bottom: none; }
+  .slip-label { color: var(--ivory-dim); }
+  .slip-val { font-weight: 600; color: var(--ivory); }
+  .slip-total-row { display: flex; justify-content: space-between; padding: 14px 0; font-weight: 700; font-size: 15px; background: rgba(77,184,122,0.08); padding: 16px; border-radius: 10px; margin-top: 8px; }
+
+  /* ─── PAYMENT PENDING ─── */
+  .payment-pending-card {
+    background: rgba(201,168,76,0.06); border: 1px solid rgba(201,168,76,0.25);
+    border-radius: var(--radius); padding: 16px;
+    display: flex; align-items: center; gap: 14px; margin-bottom: 10px;
+  }
+  .payment-proof-thumb {
+    width: 56px; height: 56px; border-radius: 8px; background: var(--bg3);
+    display: flex; align-items: center; justify-content: center; font-size: 24px; flex-shrink: 0;
+    border: 1px solid var(--border);
+  }
+  .wa-preview-box {
+    background: #0D1117; border: 1px solid var(--border); border-radius: 12px;
+    padding: 16px 20px; font-size: 13px; color: #8D9DA8;
+    white-space: pre-wrap; line-height: 1.7; font-family: 'Courier New', monospace;
+  }
+  .wa-preview-box .wa-header { display: flex; gap: 6px; margin-bottom: 12px; }
+  .wa-dot { width: 12px; height: 12px; border-radius: 50%; }
+</style>
+</head>
+<body>
+
+<!-- ════════════════════════════════════════════
+     LOGIN SCREEN
+════════════════════════════════════════════ -->
+<div id="screen-login" class="screen active">
+  <div class="login-bg"></div>
+  
+  <!-- Piano keys decoration -->
+  <div class="piano-keys-deco" id="pianoKeys"></div>
+
+    <div class="login-card">
+      <div style="text-align:center;margin-bottom:28px;">
+        <svg viewBox="0 0 260 80" xmlns="http://www.w3.org/2000/svg" style="width:200px;color:var(--ivory);">
+          <g fill="currentColor">
+            <rect x="0" y="1" width="19" height="4" rx="0.5"/>
+            <rect x="5" y="6.5" width="11" height="3" rx="0.5" opacity="0.4"/>
+            <rect x="0" y="10" width="19" height="4" rx="0.5"/>
+            <rect x="5" y="15.5" width="11" height="3" rx="0.5" opacity="0.4"/>
+            <rect x="0" y="19" width="19" height="4" rx="0.5"/>
+            <rect x="0" y="24" width="19" height="4" rx="0.5"/>
+            <rect x="5" y="29.5" width="11" height="3" rx="0.5" opacity="0.4"/>
+            <rect x="0" y="33" width="19" height="4" rx="0.5"/>
+            <rect x="5" y="38.5" width="11" height="3" rx="0.5" opacity="0.4"/>
+            <rect x="0" y="42" width="19" height="4" rx="0.5"/>
+            <rect x="0" y="47" width="19" height="4" rx="0.5"/>
+            <rect x="5" y="52.5" width="11" height="3" rx="0.5" opacity="0.4"/>
+            <rect x="19" y="0" width="5.5" height="60"/>
+            <path d="M24.5,0 C24.5,0 54,0 54,22 C54,44 24.5,44 24.5,44 Z"/>
+            <rect x="26" y="44" width="3" height="18"/>
+            <ellipse cx="22.5" cy="61" rx="5.5" ry="3.5" transform="rotate(-15 22.5 61)"/>
+            <text x="60" y="52" font-family="Arial Black,sans-serif" font-weight="900" font-size="42" letter-spacing="-1">ANOTES</text>
+          </g>
+        </svg>
+        <div style="font-size:11px;letter-spacing:4px;color:var(--ivory-dim);text-transform:uppercase;margin-top:6px;">STUDIO <span style="font-family:Georgia,serif;font-style:italic;letter-spacing:0;">by Khristine</span></div>
+      </div>
+
+    <div class="login-label">Masuk sebagai</div>
+    <div class="role-grid">
+      <div class="role-btn" onclick="selectRole('admin')" id="role-admin">
+        <span class="role-icon">🏢</span>
+        Admin
+      </div>
+      <div class="role-btn" onclick="selectRole('guru')" id="role-guru">
+        <span class="role-icon">🎹</span>
+        Guru
+      </div>
+      <div class="role-btn" onclick="selectRole('ortu')" id="role-ortu">
+        <span class="role-icon">👨‍👩‍👧</span>
+        Orang Tua
+      </div>
+    </div>
+
+    <div class="input-group">
+      <label>Email</label>
+      <input type="email" placeholder="email@pianotes.id" id="input-email">
+    </div>
+    <div class="input-group">
+      <label>Password</label>
+      <input type="password" placeholder="••••••••" id="input-pass">
+    </div>
+
+    <button class="btn-primary" onclick="doLogin()">Masuk ke Dashboard</button>
+  </div>
+</div>
+
+<!-- ════════════════════════════════════════════
+     APP SCREEN
+════════════════════════════════════════════ -->
+<div id="screen-app" class="screen">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar" id="sidebar">
+    <div class="sidebar-brand">
+      <svg viewBox="0 0 260 72" xmlns="http://www.w3.org/2000/svg" style="width:148px;color:var(--ivory);display:block;margin-bottom:4px;">
+        <g fill="currentColor">
+          <rect x="0" y="1" width="19" height="3.5" rx="0.5"/>
+          <rect x="5" y="5.5" width="11" height="2.5" rx="0.5" opacity="0.4"/>
+          <rect x="0" y="9" width="19" height="3.5" rx="0.5"/>
+          <rect x="5" y="13.5" width="11" height="2.5" rx="0.5" opacity="0.4"/>
+          <rect x="0" y="17" width="19" height="3.5" rx="0.5"/>
+          <rect x="0" y="21" width="19" height="3.5" rx="0.5"/>
+          <rect x="5" y="25.5" width="11" height="2.5" rx="0.5" opacity="0.4"/>
+          <rect x="0" y="29" width="19" height="3.5" rx="0.5"/>
+          <rect x="5" y="33.5" width="11" height="2.5" rx="0.5" opacity="0.4"/>
+          <rect x="0" y="37" width="19" height="3.5" rx="0.5"/>
+          <rect x="0" y="41" width="19" height="3.5" rx="0.5"/>
+          <rect x="5" y="45.5" width="11" height="2.5" rx="0.5" opacity="0.4"/>
+          <rect x="19" y="0" width="5" height="52"/>
+          <path d="M24,0 C24,0 48,0 48,19 C48,38 24,38 24,38 Z"/>
+          <rect x="25.5" y="38" width="2.5" height="16"/>
+          <ellipse cx="22" cy="53" rx="5" ry="3" transform="rotate(-15 22 53)"/>
+          <text x="54" y="46" font-family="Arial Black,sans-serif" font-weight="900" font-size="37" letter-spacing="-1">ANOTES</text>
+        </g>
+      </svg>
+      <div style="font-size:9px;letter-spacing:3px;color:var(--ivory-dim);text-transform:uppercase;">STUDIO <span style="font-family:Georgia,serif;font-style:italic;letter-spacing:0;font-size:10px;">by Khristine</span></div>
+      <div class="sidebar-role-badge" id="role-badge">Admin</div>
+    </div>
+
+    <nav class="sidebar-nav" id="sidebar-nav">
+      <!-- injected by JS -->
+    </nav>
+
+    <div class="sidebar-footer">
+      <div class="user-info">
+        <div class="user-avatar" id="user-avatar">A</div>
+        <div>
+          <div class="user-name" id="user-name">Admin</div>
+          <div class="user-role" id="user-role-text">Administrator</div>
+        </div>
+        <button class="btn-logout" onclick="doLogout()" title="Keluar">⏏</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN -->
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex;align-items:center;">
+        <div class="mobile-toggle" onclick="toggleSidebar()">☰</div>
+        <div class="page-title" id="page-title">Dashboard</div>
+      </div>
+      <div class="topbar-right">
+        <div class="search-bar">
+          <span>🔍</span>
+          <input type="text" placeholder="Cari murid, guru...">
+        </div>
+        <div class="notif-btn">
+          🔔
+          <div class="notif-dot"></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="content" id="content">
+      <!-- injected by JS -->
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ TOAST ════════════ -->
+<div id="toast"></div>
+
+<!-- ════════════ MODAL: TAMBAH MURID ════════════ -->
+<div class="modal-overlay" id="modal-tambah-murid">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-tambah-murid')">✕</button>
+    <div class="modal-title">+ Tambah Murid Baru</div>
+    <div class="form-section">Data Murid</div>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Nama Lengkap</label><input type="text" id="m-nama" placeholder="Cth: Zara Amelia"></div>
+      <div class="form-group"><label>Tanggal Lahir</label><input type="date" id="m-tgl"></div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Level / Grade</label>
+        <select id="m-level">
+          <option>Grade 1 — Beginner</option>
+          <option>Grade 2</option>
+          <option>Grade 3</option>
+          <option>Grade 4</option>
+          <option>Grade 5 — Advanced</option>
+        </select>
+      </div>
+      <div class="form-group"><label>No. WA Orang Tua</label><input type="tel" id="m-wa" placeholder="08xx-xxxx-xxxx"></div>
+    </div>
+    <div class="form-section">Jadwal & Program</div>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Guru</label>
+        <select id="m-guru">
+          <option>Rizky Pratama</option>
+          <option>Nadia Kusuma</option>
+          <option>Citra Handayani</option>
+          <option>Farhan Alamsyah</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Tipe Les</label>
+        <select id="m-tipe">
+          <option>Home Visit</option>
+          <option>Studio</option>
+          <option>Online</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Hari Les</label>
+        <select id="m-hari">
+          <option>Senin</option><option>Selasa</option><option>Rabu</option>
+          <option>Kamis</option><option>Jumat</option><option>Sabtu</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Jam Les</label><input type="time" id="m-jam" value="09:00"></div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Durasi (menit)</label>
+        <select id="m-durasi">
+          <option>30</option><option>45</option><option selected>60</option><option>90</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Fee per Sesi (Rp)</label><input type="number" id="m-fee" placeholder="120000"></div>
+    </div>
+    <div class="form-group"><label>Alamat (untuk Home Visit)</label><input type="text" id="m-alamat" placeholder="Jl. Mawar No. 12, Jakarta Selatan"></div>
+    <div class="form-group"><label>Tanggal Mulai</label><input type="date" id="m-mulai"></div>
+    <div class="form-actions">
+      <button class="btn-sm btn-outline" style="flex:1;" onclick="closeModal('modal-tambah-murid')">Batal</button>
+      <button class="btn-sm btn-gold" style="flex:1;padding:10px;" onclick="saveTambahMurid()">Simpan Murid ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ MODAL: TAMBAH GURU ════════════ -->
+<div class="modal-overlay" id="modal-tambah-guru">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal('modal-tambah-guru')">✕</button>
+    <div class="modal-title">+ Tambah Guru Baru</div>
+    <div class="form-section">Data Pribadi</div>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Nama Lengkap</label><input type="text" id="g-nama" placeholder="Cth: Budi Santoso"></div>
+      <div class="form-group"><label>No. WA</label><input type="tel" id="g-wa" placeholder="08xx-xxxx-xxxx"></div>
+    </div>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Tanggal Bergabung</label><input type="date" id="g-bergabung"></div>
+      <div class="form-group"><label>Jabatan</label>
+        <select id="g-jabatan">
+          <option>Guru Piano Freelance</option>
+          <option>Guru Piano Tetap</option>
+          <option>Guru Senior</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-section">Tarif & Area</div>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Honor Home Visit (Rp/sesi)</label><input type="number" id="g-honor-hv" placeholder="130000"></div>
+      <div class="form-group"><label>Honor Online (Rp/sesi)</label><input type="number" id="g-honor-ol" placeholder="120000"></div>
+    </div>
+    <div class="form-group"><label>Area Mengajar</label><input type="text" id="g-area" placeholder="Cth: Jakarta Selatan, Jakarta Barat"></div>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Level yang Diajarkan</label>
+        <select id="g-level">
+          <option>Grade 1–3</option><option>Grade 1–5</option><option>Grade 2–4</option><option>Grade 3–5</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Tipe Mengajar</label>
+        <select id="g-tipe">
+          <option>Home Visit & Studio</option><option>Home Visit</option><option>Online</option><option>Studio</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Catatan</label><textarea id="g-catatan" placeholder="Informasi tambahan tentang guru..."></textarea></div>
+    <div class="form-actions">
+      <button class="btn-sm btn-outline" style="flex:1;" onclick="closeModal('modal-tambah-guru')">Batal</button>
+      <button class="btn-sm btn-gold" style="flex:1;padding:10px;" onclick="saveTambahGuru()">Simpan Guru ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ MODAL: UPLOAD BUKTI BAYAR ════════════ -->
+<div class="modal-overlay" id="modal-upload-bukti">
+  <div class="modal-box" style="max-width:480px;">
+    <button class="modal-close" onclick="closeModal('modal-upload-bukti')">✕</button>
+    <div class="modal-title">Upload Bukti Pembayaran</div>
+    <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:18px;font-size:13px;">
+      <div style="font-weight:700;margin-bottom:4px;">Invoice Juni 2026</div>
+      <div style="color:var(--ivory-dim);">Zara Amelia • 4 sesi × Rp 120.000</div>
+      <div style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:700;color:var(--gold);margin-top:6px;">Rp 480.000</div>
+    </div>
+    <div class="form-group"><label>Rekening Tujuan</label>
+      <div style="background:var(--bg3);border-radius:10px;padding:12px;font-size:13px;color:var(--ivory-dim);border:1px solid var(--border);">
+        🏦 <strong style="color:var(--ivory);">BCA 1234567890</strong> a/n Pianotes Music<br>
+        <small>Atau: BNI 9876543210 / GoPay 08123456789</small>
+      </div>
+    </div>
+    <div class="form-group">
+      <label>Foto Bukti Transfer</label>
+      <div class="upload-area" id="upload-area">
+        <input type="file" accept="image/*" id="buktiFile" onchange="previewBukti(this)">
+        <div id="uploadLabel">
+          <div style="font-size:32px;margin-bottom:8px;">📁</div>
+          <div style="font-weight:700;font-size:13px;">Klik atau drag gambar di sini</div>
+          <div style="font-size:12px;color:var(--ivory-dim);margin-top:6px;">JPG, PNG, maks. 5MB</div>
+        </div>
+        <img id="buktiPreview" class="upload-preview">
+      </div>
+    </div>
+    <div class="form-group"><label>Catatan (opsional)</label><input type="text" id="bukti-catatan" placeholder="Cth: Transfer via BCA mobile 07/06/2026"></div>
+    <div class="form-actions">
+      <button class="btn-sm btn-outline" style="flex:1;" onclick="closeModal('modal-upload-bukti')">Batal</button>
+      <button class="btn-sm btn-gold" style="flex:1;padding:10px;" onclick="submitBuktiBayar()">Kirim Bukti ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ MODAL: KONFIRMASI BAYAR (ADMIN) ════════════ -->
+<div class="modal-overlay" id="modal-konfirmasi-bayar">
+  <div class="modal-box" style="max-width:480px;">
+    <button class="modal-close" onclick="closeModal('modal-konfirmasi-bayar')">✕</button>
+    <div class="modal-title">Konfirmasi Pembayaran</div>
+    <div id="konfirmasi-detail">
+      <!-- filled by JS -->
+    </div>
+    <div style="background:var(--bg3);border-radius:12px;padding:16px;text-align:center;margin-bottom:18px;min-height:120px;display:flex;align-items:center;justify-content:center;font-size:48px;border:1px solid var(--border);">
+      📷
+    </div>
+    <div style="font-size:12px;color:var(--ivory-dim);text-align:center;margin-bottom:18px;">Preview bukti transfer dari orang tua</div>
+    <div class="form-actions">
+      <button class="btn-sm" style="flex:1;padding:10px;background:rgba(224,92,106,0.15);color:var(--red);border:1px solid rgba(224,92,106,0.3);border-radius:10px;cursor:pointer;font-family:inherit;font-weight:700;" onclick="rejectPayment()">✕ Tolak</button>
+      <button class="btn-sm btn-gold" style="flex:1;padding:10px;" onclick="confirmPayment()">✓ Konfirmasi Lunas</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ MODAL: SLIP GAJI ════════════ -->
+<div class="modal-overlay" id="modal-slip-gaji">
+  <div class="modal-box" style="max-width:620px;">
+    <button class="modal-close" onclick="closeModal('modal-slip-gaji')">✕</button>
+    <div id="slip-gaji-content"><!-- filled by JS --></div>
+    <div class="form-actions">
+      <button class="btn-sm btn-outline" style="flex:1;" onclick="closeModal('modal-slip-gaji')">Tutup</button>
+      <button class="btn-sm btn-ghost" style="flex:1;" onclick="showToast('Link WA disalin!','success')">🔗 Kirim via WA</button>
+      <button class="btn-sm btn-gold" style="flex:1;padding:10px;" onclick="showToast('Slip gaji diunduh!','success')">📥 Download PDF</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ MODAL: RESCHEDULE ════════════ -->
+<div class="modal-overlay" id="modal-reschedule">
+  <div class="modal-box" style="max-width:480px;">
+    <button class="modal-close" onclick="closeModal('modal-reschedule')">✕</button>
+    <div class="modal-title">Ajukan Reschedule</div>
+    <div style="background:rgba(92,138,224,0.08);border:1px solid rgba(92,138,224,0.2);border-radius:10px;padding:14px;margin-bottom:18px;font-size:13px;">
+      <div style="font-weight:700;margin-bottom:4px;color:var(--blue);">ℹ Kebijakan Reschedule</div>
+      <div style="color:var(--ivory-dim);">Pengajuan diterima min. <strong>24 jam sebelum</strong> jadwal. Maks. 2× per bulan. Make-up class dapat dilakukan dalam 60 hari.</div>
+    </div>
+    <div class="form-group"><label>Jadwal yang Ingin Direschedule</label>
+      <select id="rs-jadwal">
+        <option>Senin, 9 Jun 2026 — 09:00 WIB</option>
+        <option>Jumat, 13 Jun 2026 — 09:00 WIB</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Alasan Reschedule</label>
+      <select id="rs-alasan">
+        <option>Murid sakit / tidak bisa hadir</option>
+        <option>Ada keperluan mendadak</option>
+        <option>Acara keluarga</option>
+        <option>Lainnya</option>
+      </select>
+    </div>
+    <div class="form-group"><label>Usulan Tanggal Pengganti</label><input type="date" id="rs-tanggal"></div>
+    <div class="form-group"><label>Usulan Jam Pengganti</label><input type="time" id="rs-jam" value="09:00"></div>
+    <div class="form-group"><label>Catatan Tambahan</label><textarea id="rs-catatan" placeholder="Info tambahan untuk guru..."></textarea></div>
+    <div class="form-actions">
+      <button class="btn-sm btn-outline" style="flex:1;" onclick="closeModal('modal-reschedule')">Batal</button>
+      <button class="btn-sm btn-gold" style="flex:1;padding:10px;" onclick="submitReschedule()">Kirim Permintaan ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ MODAL: GENERATE INVOICE ════════════ -->
+<div class="modal-overlay" id="modal-gen-invoice">
+  <div class="modal-box" style="max-width:560px;">
+    <button class="modal-close" onclick="closeModal('modal-gen-invoice')">✕</button>
+    <div class="modal-title">Generate Invoice Bulanan</div>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Bulan</label>
+        <select id="inv-bulan">
+          <option value="6">Juni 2026</option><option value="7">Juli 2026</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Murid</label>
+        <select id="inv-murid">
+          <option>Semua Murid Aktif</option><option>Zara Amelia</option>
+          <option>Nathan Putra</option><option>Keisha Ramadhani</option>
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Logika Billing</label>
+      <select id="inv-logic">
+        <option value="4">Normal — 4 sesi/bulan</option>
+        <option value="3">Ada Tanggal Merah — 3 sesi/bulan</option>
+        <option value="5">5 Minggu — tetap 4 sesi</option>
+      </select>
+    </div>
+    <div id="inv-preview" style="background:var(--bg3);border-radius:10px;padding:16px;margin-top:8px;font-size:13px;display:none;">
+      <!-- preview rows -->
+    </div>
+    <div class="form-actions">
+      <button class="btn-sm btn-outline" onclick="previewInvoice()">👁 Preview</button>
+      <button class="btn-sm btn-outline" style="flex:1;" onclick="closeModal('modal-gen-invoice')">Batal</button>
+      <button class="btn-sm btn-gold" style="flex:1;padding:10px;" onclick="generateInvoice()">Generate ✓</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════
+let currentRole = 'admin';
+let currentPage = '';
+
+// Demo data storage
+let muridList = [
+  {id:'PLN-001',nama:'Zara Amelia',guru:'Rizky Pratama',jadwal:'Senin 09:00',tipe:'Home Visit',level:'Grade 3',status:'Aktif',color:'#C9A84C',sesi:4,fee:120000,wa:'08123456789'},
+  {id:'PLN-002',nama:'Nathan Putra',guru:'Nadia Kusuma',jadwal:'Rabu 10:30',tipe:'Studio',level:'Grade 2',status:'Aktif',color:'#5C8AE0',sesi:3,fee:105000,wa:'08234567890'},
+  {id:'PLN-003',nama:'Keisha Ramadhani',guru:'Rizky Pratama',jadwal:'Kamis 13:00',tipe:'Online',level:'Grade 4',status:'Aktif',color:'#4CAF8A',sesi:4,fee:110000,wa:'08345678901'},
+  {id:'PLN-004',nama:'Rafa Adiputra',guru:'Citra Handayani',jadwal:'Selasa 15:00',tipe:'Studio',level:'Grade 1',status:'Cuti',color:'#E05C6A',sesi:4,fee:100000,wa:'08456789012'},
+  {id:'PLN-005',nama:'Bella Salsabila',guru:'Nadia Kusuma',jadwal:'Jumat 17:00',tipe:'Home Visit',level:'Grade 2',status:'Aktif',color:'#8A5CE0',sesi:4,fee:120000,wa:'08567890123'},
+];
+
+let guruList = [
+  {nama:'Rizky Pratama',area:'Selatan, Barat',tipe:'Home Visit',level:'Grade 1–5',murid:12,color:'#C9A84C',sesi:48,gajiEst:4800000,status:'Aktif'},
+  {nama:'Nadia Kusuma',area:'Utara, Timur',tipe:'Studio',level:'Grade 1–3',murid:9,color:'#5C8AE0',sesi:36,gajiEst:3600000,status:'Aktif'},
+  {nama:'Citra Handayani',area:'Selatan',tipe:'Studio, Online',level:'Grade 2–4',murid:8,color:'#4CAF8A',sesi:32,gajiEst:3200000,status:'Aktif'},
+  {nama:'Farhan Alamsyah',area:'Timur, Utara',tipe:'Home Visit',level:'Grade 1–2',murid:7,color:'#8A5CE0',sesi:28,gajiEst:2800000,status:'Aktif'},
+];
+
+let invoiceList = [
+  {id:'INV-2026-042',murid:'Zara Amelia',detail:'4 sesi × 60 mnt',nominal:480000,status:'Belum Bayar',statusColor:'red'},
+  {id:'INV-2026-041',murid:'Nathan Putra',detail:'3 sesi × 45 mnt',nominal:315000,status:'Menunggu Konfirmasi',statusColor:'gold'},
+  {id:'INV-2026-040',murid:'Keisha Ramadhani',detail:'4 sesi × 60 mnt',nominal:440000,status:'Sudah Bayar',statusColor:'green'},
+  {id:'INV-2026-039',murid:'Rafa Adiputra',detail:'4 sesi × 45 mnt',nominal:360000,status:'Sudah Bayar',statusColor:'green'},
+  {id:'INV-2026-038',murid:'Bella Salsabila',detail:'4 sesi × 60 mnt',nominal:480000,status:'Belum Bayar',statusColor:'red'},
+];
+
+// ═══════════════════════════════════════════
+// MODAL & TOAST UTILITIES
+// ═══════════════════════════════════════════
+function openModal(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.add('open'); document.body.style.overflow='hidden'; }
+}
+function closeModal(id) {
+  const el = document.getElementById(id);
+  if (el) { el.classList.remove('open'); document.body.style.overflow=''; }
+}
+
+let _toastTimer;
+function showToast(msg, type='') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (type ? ' '+type : '');
+  clearTimeout(_toastTimer);
+  _toastTimer = setTimeout(() => { t.className = ''; }, 3000);
+}
+
+// Upload preview
+function previewBukti(input) {
+  const preview = document.getElementById('buktiPreview');
+  const label = document.getElementById('uploadLabel');
+  if (input.files && input.files[0]) {
+    const reader = new FileReader();
+    reader.onload = e => {
+      preview.src = e.target.result;
+      preview.style.display = 'block';
+      label.style.display = 'none';
+    };
+    reader.readAsDataURL(input.files[0]);
+  }
+}
+
+// ─── FORM SAVE HANDLERS ───
+function saveTambahMurid() {
+  const nama = document.getElementById('m-nama').value.trim();
+  if (!nama) { showToast('Nama murid wajib diisi!', 'error'); return; }
+  const newMurid = {
+    id: 'PLN-' + String(muridList.length + 1).padStart(3,'0'),
+    nama, guru: document.getElementById('m-guru').value,
+    jadwal: document.getElementById('m-hari').value + ' ' + document.getElementById('m-jam').value,
+    tipe: document.getElementById('m-tipe').value,
+    level: document.getElementById('m-level').value,
+    status: 'Aktif', color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'),
+    sesi: 4, fee: parseInt(document.getElementById('m-fee').value)||120000,
+    wa: document.getElementById('m-wa').value,
+  };
+  muridList.push(newMurid);
+  closeModal('modal-tambah-murid');
+  showToast('Murid ' + nama + ' berhasil ditambahkan!', 'success');
+  navigateTo('data-murid');
+}
+
+function saveTambahGuru() {
+  const nama = document.getElementById('g-nama').value.trim();
+  if (!nama) { showToast('Nama guru wajib diisi!', 'error'); return; }
+  guruList.push({
+    nama, area: document.getElementById('g-area').value,
+    tipe: document.getElementById('g-tipe').value,
+    level: document.getElementById('g-level').value,
+    murid: 0, color: '#4DB87A', sesi: 0, gajiEst: 0, status: 'Aktif',
+  });
+  closeModal('modal-tambah-guru');
+  showToast('Guru ' + nama + ' berhasil ditambahkan!', 'success');
+  navigateTo('data-guru');
+}
+
+function submitBuktiBayar() {
+  const file = document.getElementById('buktiFile');
+  if (!file.files || !file.files[0]) { showToast('Upload foto bukti transfer dulu!', 'error'); return; }
+  // Update invoice status to "Menunggu Konfirmasi"
+  invoiceList[0].status = 'Menunggu Konfirmasi';
+  invoiceList[0].statusColor = 'gold';
+  closeModal('modal-upload-bukti');
+  showToast('Bukti bayar terkirim! Menunggu konfirmasi admin.', 'success');
+  navigateTo('invoice-ortu');
+}
+
+function submitReschedule() {
+  const tanggal = document.getElementById('rs-tanggal').value;
+  if (!tanggal) { showToast('Pilih tanggal pengganti dulu!', 'error'); return; }
+  closeModal('modal-reschedule');
+  showToast('Permintaan reschedule terkirim! Admin akan konfirmasi.', 'success');
+}
+
+let konfirmasiTarget = null;
+function openKonfirmasi(idx) {
+  konfirmasiTarget = idx;
+  const inv = invoiceList[idx];
+  document.getElementById('konfirmasi-detail').innerHTML = `
+    <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-bottom:14px;">
+      <div style="font-weight:700;font-size:15px;margin-bottom:4px;">${inv.murid}</div>
+      <div style="color:var(--ivory-dim);font-size:13px;">${inv.detail} · ${inv.id}</div>
+      <div style="font-family:'Outfit',sans-serif;font-size:28px;font-weight:700;color:var(--gold);margin-top:6px;">Rp ${inv.nominal.toLocaleString('id-ID')}</div>
+    </div>
+  `;
+  openModal('modal-konfirmasi-bayar');
+}
+
+function confirmPayment() {
+  if (konfirmasiTarget !== null) {
+    invoiceList[konfirmasiTarget].status = 'Sudah Bayar';
+    invoiceList[konfirmasiTarget].statusColor = 'green';
+  }
+  closeModal('modal-konfirmasi-bayar');
+  showToast('Pembayaran dikonfirmasi lunas! ✅', 'success');
+  navigateTo('invoice');
+}
+
+function rejectPayment() {
+  if (konfirmasiTarget !== null) {
+    invoiceList[konfirmasiTarget].status = 'Belum Bayar';
+    invoiceList[konfirmasiTarget].statusColor = 'red';
+  }
+  closeModal('modal-konfirmasi-bayar');
+  showToast('Pembayaran ditolak. Orang tua akan diberitahu.', 'error');
+  navigateTo('invoice');
+}
+
+function openSlipGaji(idx) {
+  const g = guruList[idx];
+  const totalKotor = g.sesi * 130000; // avg rate
+  const potongan = Math.round(totalKotor * 0.3);
+  const bersih = totalKotor - potongan;
+  document.getElementById('slip-gaji-content').innerHTML = `
+    <div style="text-align:center;margin-bottom:20px;">
+      <div style="font-size:12px;letter-spacing:3px;color:var(--ivory-dim);text-transform:uppercase;margin-bottom:6px;">SLIP GAJI GURU</div>
+      <div style="font-family:'Cormorant Garamond',serif;font-size:22px;font-weight:700;">Pianotes Studio by Khristine</div>
+      <div style="font-size:12px;color:var(--ivory-dim);">Juni 2026</div>
+    </div>
+    <div class="slip-card" style="margin-bottom:16px;">
+      <div class="slip-head">
+        <div>
+          <div style="font-weight:700;font-size:15px;">${g.nama}</div>
+          <div style="font-size:12px;color:var(--ivory-dim);">${g.level} • ${g.tipe}</div>
+        </div>
+        <span class="badge badge-green">Aktif</span>
+      </div>
+      <div class="slip-body">
+        <div class="slip-row"><span class="slip-label">Jumlah Murid</span><span class="slip-val">${g.murid} murid</span></div>
+        <div class="slip-row"><span class="slip-label">Total Sesi Bulan Ini</span><span class="slip-val">${g.sesi} sesi</span></div>
+        <div class="slip-row"><span class="slip-label">Rata-rata Tarif/Sesi</span><span class="slip-val">Rp 130.000</span></div>
+        <div class="slip-row"><span class="slip-label">Total Pendapatan Kotor</span><span class="slip-val">Rp ${totalKotor.toLocaleString('id-ID')}</span></div>
+        <div class="slip-row"><span class="slip-label" style="color:var(--red);">Potongan Agency (30%)</span><span class="slip-val" style="color:var(--red);">- Rp ${potongan.toLocaleString('id-ID')}</span></div>
+      </div>
+    </div>
+    <div class="slip-total-row">
+      <span style="font-size:14px;">Total Gaji Bersih (70%)</span>
+      <span style="font-family:'Outfit',sans-serif;font-size:22px;color:var(--gold);">Rp ${bersih.toLocaleString('id-ID')}</span>
+    </div>
+    <div style="font-size:12px;color:var(--ivory-dim);text-align:center;margin-top:12px;">
+      Digenerate otomatis • ${new Date().toLocaleDateString('id-ID',{day:'numeric',month:'long',year:'numeric'})}
+    </div>
+  `;
+  openModal('modal-slip-gaji');
+}
+
+function previewInvoice() {
+  const logic = parseInt(document.getElementById('inv-logic').value);
+  const murid = document.getElementById('inv-murid').value;
+  const box = document.getElementById('inv-preview');
+  box.style.display = 'block';
+  if (murid === 'Semua Murid Aktif') {
+    const aktif = muridList.filter(m => m.status === 'Aktif');
+    box.innerHTML = `<div style="font-weight:700;margin-bottom:10px;color:var(--accent);">Preview — ${logic} sesi/murid</div>` +
+      aktif.map(m => {
+        const total = m.fee * logic;
+        return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
+          <span>${m.nama}</span>
+          <span style="color:var(--gold);font-weight:700;">Rp ${total.toLocaleString('id-ID')}</span>
+        </div>`;
+      }).join('') +
+      `<div style="margin-top:8px;font-size:13px;font-weight:700;color:var(--accent);">Total: Rp ${aktif.reduce((s,m) => s + m.fee*logic, 0).toLocaleString('id-ID')}</div>`;
+  } else {
+    const m = muridList.find(x => x.nama === murid) || muridList[0];
+    box.innerHTML = `<div style="font-weight:700;color:var(--accent);">${m.nama} — ${logic} sesi × Rp ${m.fee.toLocaleString('id-ID')} = <span style="color:var(--gold);">Rp ${(m.fee*logic).toLocaleString('id-ID')}</span></div>`;
+  }
+}
+
+function generateInvoice() {
+  previewInvoice();
+  closeModal('modal-gen-invoice');
+  showToast('Invoice berhasil digenerate!', 'success');
+  navigateTo('invoice');
+}
+
+// ─── ABSENSI FORM ───
+function showAbsensiForm() {
+  const f = document.getElementById('absensi-form');
+  if (f) f.style.display = 'block';
+}
+function hideAbsensiForm() {
+  const f = document.getElementById('absensi-form');
+  if (f) f.style.display = 'none';
+}
+
+// ═══════════════════════════════════════════
+// LOGIN
+// ═══════════════════════════════════════════
+function selectRole(role) {
+  currentRole = role;
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+  document.getElementById('role-' + role).classList.add('selected');
+}
+
+function doLogin() {
+  if (!currentRole) { alert('Pilih role dulu!'); return; }
+  document.getElementById('screen-login').classList.remove('active');
+  document.getElementById('screen-app').classList.add('active');
+  initApp();
+}
+
+function doLogout() {
+  document.getElementById('screen-app').classList.remove('active');
+  document.getElementById('screen-login').classList.add('active');
+  document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
+}
+
+// Piano keys decoration
+(function() {
+  const wrap = document.getElementById('pianoKeys');
+  const pattern = [1,0,1,1,0,1,0,1,1,0,1,0]; // 0=black, 1=white
+  for (let i = 0; i < 60; i++) {
+    const k = document.createElement('div');
+    k.className = pattern[i % 12] === 1 ? 'key-w' : 'key-b';
+    wrap.appendChild(k);
+  }
+})();
+
+// ═══════════════════════════════════════════
+// MENUS PER ROLE
+// ═══════════════════════════════════════════
+const menus = {
+  admin: [
+    { section: 'Utama' },
+    { id: 'dashboard', icon: '📊', label: 'Dashboard' },
+    { id: 'data-murid', icon: '🎓', label: 'Data Murid' },
+    { id: 'data-guru', icon: '👩‍🏫', label: 'Data Guru' },
+    { section: 'Operasional' },
+    { id: 'jadwal', icon: '📅', label: 'Jadwal Les' },
+    { id: 'absensi', icon: '✅', label: 'Absensi', badge: '3' },
+    { id: 'kalender', icon: '🗓️', label: 'Kalender Les' },
+    { section: 'Keuangan' },
+    { id: 'invoice', icon: '🧾', label: 'Invoice', badge: '7' },
+    { id: 'pendapatan', icon: '💰', label: 'Pendapatan' },
+    { id: 'gaji-guru', icon: '💳', label: 'Gaji Guru' },
+  ],
+  guru: [
+    { section: 'Utama' },
+    { id: 'dashboard', icon: '📊', label: 'Dashboard' },
+    { id: 'murid-saya', icon: '🎓', label: 'Murid Saya' },
+    { id: 'absensi', icon: '✅', label: 'Input Absensi', badge: '2' },
+    { section: 'Laporan' },
+    { id: 'catatan-les', icon: '📝', label: 'Catatan Les' },
+    { id: 'laporan-video', icon: '🎬', label: 'Laporan Video', badge: '3' },
+    { section: 'Keuangan' },
+    { id: 'tarif-guru', icon: '💰', label: 'Tarif & Fee' },
+    { id: 'penghasilan', icon: '📈', label: 'Penghasilan' },
+  ],
+  ortu: [
+    { section: 'Utama' },
+    { id: 'dashboard', icon: '🏠', label: 'Beranda' },
+    { id: 'profil-murid', icon: '👤', label: 'Profil Murid' },
+    { id: 'jadwal-murid', icon: '📅', label: 'Jadwal Les' },
+    { section: 'Progress' },
+    { id: 'catatan-progress', icon: '📝', label: 'Catatan Progress' },
+    { id: 'video-murid', icon: '🎬', label: 'Video Bulanan' },
+    { section: 'Pembayaran' },
+    { id: 'invoice-ortu', icon: '🧾', label: 'Invoice', badge: '1' },
+    { id: 'riwayat-bayar', icon: '💳', label: 'Riwayat Bayar' },
+  ]
+};
+
+// ═══════════════════════════════════════════
+// INIT APP
+// ═══════════════════════════════════════════
+function initApp() {
+  const roleLabels = { admin: 'Administrator', guru: 'Guru Piano', ortu: 'Orang Tua' };
+  const roleNames = { admin: 'Admin Pianotes', guru: 'Rizky Pratama', ortu: 'Ibu Anita' };
+  const roleInitials = { admin: 'AP', guru: 'BS', ortu: 'IS' };
+  const roleColors = { admin: '#4DB87A', guru: '#5C8AE0', ortu: '#4CAF8A' };
+
+  document.getElementById('role-badge').textContent = roleLabels[currentRole];
+  document.getElementById('user-name').textContent = roleNames[currentRole];
+  document.getElementById('user-role-text').textContent = roleLabels[currentRole];
+  document.getElementById('user-avatar').textContent = roleInitials[currentRole];
+  document.getElementById('user-avatar').style.background = `linear-gradient(135deg, ${roleColors[currentRole]}, ${roleColors[currentRole]}88)`;
+
+  buildNav();
+  navigateTo('dashboard');
+}
+
+function buildNav() {
+  const nav = document.getElementById('sidebar-nav');
+  nav.innerHTML = '';
+  (menus[currentRole] || []).forEach(item => {
+    if (item.section) {
+      nav.innerHTML += `<div class="nav-section-label">${item.section}</div>`;
+    } else {
+      nav.innerHTML += `
+        <div class="nav-item" id="nav-${item.id}" onclick="navigateTo('${item.id}')">
+          <span class="nav-icon">${item.icon}</span>
+          ${item.label}
+          ${item.badge ? `<span class="nav-badge">${item.badge}</span>` : ''}
+        </div>`;
+    }
+  });
+}
+
+function navigateTo(pageId) {
+  currentPage = pageId;
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  const navEl = document.getElementById('nav-' + pageId);
+  if (navEl) navEl.classList.add('active');
+
+  const pageTitles = {
+    dashboard: 'Dashboard', 'data-murid': 'Data Murid', 'data-guru': 'Data Guru',
+    jadwal: 'Jadwal Les', absensi: 'Absensi', kalender: 'Kalender Les',
+    invoice: 'Invoice', pendapatan: 'Rekap Pendapatan', 'gaji-guru': 'Gaji Guru',
+    'murid-saya': 'Murid Saya', 'catatan-les': 'Catatan Les', 'laporan-video': 'Laporan Video',
+    'tarif-guru': 'Tarif & Fee', penghasilan: 'Rekap Penghasilan',
+    'profil-murid': 'Profil Murid', 'jadwal-murid': 'Jadwal Les',
+    'catatan-progress': 'Catatan Progress', 'video-murid': 'Video Bulanan',
+    'invoice-ortu': 'Invoice', 'riwayat-bayar': 'Riwayat Pembayaran',
+  };
+
+  document.getElementById('page-title').textContent = pageTitles[pageId] || pageId;
+  document.getElementById('content').innerHTML = renderPage(pageId);
+
+  // Close sidebar on mobile
+  document.getElementById('sidebar').classList.remove('open');
+}
+
+function toggleSidebar() {
+  document.getElementById('sidebar').classList.toggle('open');
+}
+
+// ═══════════════════════════════════════════
+// PAGE RENDERER
+// ═══════════════════════════════════════════
+function renderPage(id) {
+  switch(id) {
+    // ─── ADMIN PAGES ───
+    case 'dashboard':
+      return currentRole === 'guru' ? renderGuruDashboard()
+           : currentRole === 'ortu' ? renderOrtuDashboard()
+           : renderAdminDashboard();
+    case 'data-murid': return renderDataMurid();
+    case 'data-guru': return renderDataGuru();
+    case 'jadwal': return renderJadwal();
+    case 'absensi': return currentRole === 'guru' ? renderInputAbsensi() : renderAbsensiAdmin();
+    case 'kalender': return renderKalender();
+    case 'invoice': return renderInvoice();
+    case 'pendapatan': return renderPendapatan();
+    case 'gaji-guru': return renderGajiGuru();
+    // ─── GURU PAGES ───
+    case 'murid-saya': return renderMuridSaya();
+    case 'catatan-les': return renderCatatanLes();
+    case 'laporan-video': return renderLaporanVideo();
+    case 'tarif-guru': return renderTarifGuru();
+    case 'penghasilan': return renderPenghasilan();
+    // ─── ORTU PAGES ───
+    case 'profil-murid': return renderProfilMurid();
+    case 'jadwal-murid': return renderJadwalMurid();
+    case 'catatan-progress': return renderCatatanProgress();
+    case 'video-murid': return renderVideoMurid();
+    case 'invoice-ortu': return renderInvoiceOrtu();
+    case 'riwayat-bayar': return renderRiwayatBayar();
+    default: return '<div style="color:var(--ivory-dim);padding:40px;text-align:center;">Halaman sedang dikembangkan 🚧</div>';
+  }
+}
+
+// ═══════════════════════════════════════════
+// ADMIN DASHBOARD
+// ═══════════════════════════════════════════
+function renderAdminDashboard() {
+  return `
+    <div class="stats-grid">
+      <div class="stat-card gold">
+        <div class="stat-icon">🎓</div>
+        <div class="stat-value">48</div>
+        <div class="stat-label">Total Murid Aktif</div>
+        <div class="stat-change up">↑ 3 dari bulan lalu</div>
+      </div>
+      <div class="stat-card blue">
+        <div class="stat-icon">👩‍🏫</div>
+        <div class="stat-value">8</div>
+        <div class="stat-label">Total Guru</div>
+        <div class="stat-change up">↑ 1 guru baru</div>
+      </div>
+      <div class="stat-card green">
+        <div class="stat-icon">💰</div>
+        <div class="stat-value">24.6jt</div>
+        <div class="stat-label">Pendapatan Juni</div>
+        <div class="stat-change up">↑ 8% vs Mei</div>
+      </div>
+      <div class="stat-card purple">
+        <div class="stat-icon">✅</div>
+        <div class="stat-value">94%</div>
+        <div class="stat-label">Tingkat Kehadiran</div>
+        <div class="stat-change up">↑ 2% dari bulan lalu</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Jadwal Hari Ini</div>
+          <span class="badge badge-gold">Minggu, 8 Juni</span>
+        </div>
+        <div class="card-body">
+          <div class="schedule-list">
+            ${[
+              ['09:00','09.00','Zara Amelia','Rizky P. • 60 mnt • Home Visit'],
+              ['10:30','10.30','Nathan Putra','Nadia K. • 45 mnt • Studio'],
+              ['13:00','13.00','Keisha Ramadhani','Rizky P. • 60 mnt • Online'],
+              ['15:00','15.00','Rafa Adiputra','Citra H. • 45 mnt • Studio'],
+              ['17:00','17.00','Bella Salsabila','Nadia K. • 60 mnt • Home Visit'],
+            ].map(([t,ts,n,d]) => `
+              <div class="schedule-item">
+                <div class="schedule-time">${t}<span>${ts}</span></div>
+                <div class="schedule-info">
+                  <div class="schedule-name">${n}</div>
+                  <div class="schedule-detail">${d}</div>
+                </div>
+                <div class="schedule-dot"></div>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Invoice Pending</div>
+          <button class="btn-sm btn-gold">Lihat Semua</button>
+        </div>
+        <div class="card-body">
+          ${[
+            ['Zara Amelia','4 sesi × 60 mnt','480.000'],
+            ['Nathan Putra','3 sesi × 45 mnt','315.000'],
+            ['Keisha Ramadhani','4 sesi × 60 mnt','440.000'],
+            ['Rafa Adiputra','4 sesi × 45 mnt','360.000'],
+          ].map(([n,d,a]) => `
+            <div class="invoice-item">
+              <div>
+                <div class="invoice-murid">${n}</div>
+                <div class="invoice-detail">${d}</div>
+              </div>
+              <div class="invoice-amount">Rp ${a}<span>Belum bayar</span></div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Status Murid</div>
+        </div>
+        <div class="card-body">
+          ${[
+            ['Aktif','48',88,'green'],
+            ['Cuti','5',9,'gold'],
+            ['Berhenti','2',3,'red'],
+          ].map(([l,v,p,c]) => `
+            <div class="progress-wrap">
+              <div class="progress-label">
+                <span>${l}</span>
+                <span>${v} murid</span>
+              </div>
+              <div class="progress-bar">
+                <div class="progress-fill" style="width:${p}%;background:var(--${c === 'red' ? 'red' : c === 'gold' ? 'gold' : 'green'})"></div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">Notifikasi Sistem</div>
+          <span class="badge badge-red">3 baru</span>
+        </div>
+        <div class="card-body">
+          <div class="notif-list">
+            <div class="notif-item warn">
+              <div class="notif-icon">⏰</div>
+              <div>
+                <div class="notif-text">Rizky P. belum upload absensi untuk Zara (Jumat, 6 Jun)</div>
+                <div class="notif-time">2 jam lalu</div>
+              </div>
+            </div>
+            <div class="notif-item info">
+              <div class="notif-icon">🔄</div>
+              <div>
+                <div class="notif-text">Nathan Putra mengajukan reschedule — Senin 9 Jun ke Selasa 10 Jun</div>
+                <div class="notif-time">4 jam lalu</div>
+              </div>
+            </div>
+            <div class="notif-item success">
+              <div class="notif-icon">💳</div>
+              <div>
+                <div class="notif-text">Pembayaran diterima dari Keisha Ramadhani — Rp 440.000</div>
+                <div class="notif-time">Kemarin 19:30</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// DATA MURID
+// ═══════════════════════════════════════════
+function renderDataMurid() {
+  const aktif = muridList.filter(m => m.status === 'Aktif').length;
+  const cuti = muridList.filter(m => m.status === 'Cuti').length;
+  return `
+    <div class="section-header">
+      <div class="section-title">Semua Murid</div>
+      <button class="btn-sm btn-gold" onclick="openModal('modal-tambah-murid')">+ Tambah Murid</button>
+    </div>
+    <div class="card">
+      <div class="card-header">
+        <div style="display:flex;gap:8px;flex-wrap:wrap;">
+          <button class="btn-sm btn-outline">Semua (${muridList.length})</button>
+          <button class="btn-sm btn-ghost">Aktif (${aktif})</button>
+          <button class="btn-sm btn-ghost">Cuti (${cuti})</button>
+        </div>
+      </div>
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>Nama Murid</th><th>Guru</th><th>Jadwal</th><th>Tipe</th>
+              <th>Level</th><th>Fee/Sesi</th><th>Status</th><th>Aksi</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${muridList.map((m, i) => `
+              <tr>
+                <td>
+                  <div class="avatar-row">
+                    <div class="avatar" style="background:${m.color}">${m.nama[0]}</div>
+                    <div><span>${m.nama}</span><div style="font-size:11px;color:var(--ivory-dim);">${m.id}</div></div>
+                  </div>
+                </td>
+                <td style="color:var(--ivory-dim)">${m.guru}</td>
+                <td>${m.jadwal}</td>
+                <td><span class="badge badge-${m.tipe==='Online'?'blue':m.tipe==='Studio'?'gray':'gold'}">${m.tipe}</span></td>
+                <td>${m.level}</td>
+                <td style="font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;color:var(--gold);">Rp ${m.fee.toLocaleString('id-ID')}</td>
+                <td><span class="badge badge-${m.status==='Aktif'?'green':m.status==='Cuti'?'gold':'red'}">${m.status}</span></td>
+                <td>
+                  <div style="display:flex;gap:6px;">
+                    <button class="btn-sm btn-outline" onclick="showToast('Buka detail ${m.nama}','info')">Detail</button>
+                    <button class="btn-sm btn-ghost" onclick="showToast('Edit ${m.nama}','info')">Edit</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// DATA GURU
+// ═══════════════════════════════════════════
+function renderDataGuru() {
+  return `
+    <div class="section-header">
+      <div class="section-title">Data Guru (${guruList.length})</div>
+      <button class="btn-sm btn-gold" onclick="openModal('modal-tambah-guru')">+ Tambah Guru</button>
+    </div>
+    <div class="grid-2">
+      ${guruList.map((g, i) => `
+        <div class="card">
+          <div class="card-body">
+            <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+              <div class="avatar" style="width:48px;height:48px;font-size:18px;background:${g.color};">${g.nama[0]}</div>
+              <div>
+                <div style="font-size:16px;font-weight:700;margin-bottom:2px;">${g.nama}</div>
+                <div style="font-size:12px;color:var(--ivory-dim);">${g.tipe}</div>
+              </div>
+              <button class="btn-sm btn-outline" style="margin-left:auto;" onclick="showToast('Edit ${g.nama}','info')">Edit</button>
+            </div>
+            <div class="info-row"><span class="info-label">Area Mengajar</span><span class="info-value">${g.area}</span></div>
+            <div class="info-row"><span class="info-label">Tipe Les</span><span class="info-value">${g.tipe}</span></div>
+            <div class="info-row"><span class="info-label">Level Murid</span><span class="info-value">${g.level}</span></div>
+            <div class="info-row"><span class="info-label">Jumlah Murid</span><span class="info-value"><strong>${g.murid}</strong> murid aktif</span></div>
+            <div class="info-row"><span class="info-label">Est. Gaji Juni</span><span class="info-value" style="font-family:'Outfit',sans-serif;font-weight:700;color:var(--gold);">Rp ${g.gajiEst.toLocaleString('id-ID')}</span></div>
+            <div style="margin-top:12px;display:flex;gap:8px;">
+              <button class="btn-sm btn-ghost" style="flex:1;" onclick="navigateTo('jadwal')">Jadwal</button>
+              <button class="btn-sm btn-ghost" style="flex:1;" onclick="navigateTo('absensi')">Absensi</button>
+              <button class="btn-sm btn-gold" style="flex:1;" onclick="openSlipGaji(${i})">Slip Gaji</button>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// JADWAL
+// ═══════════════════════════════════════════
+function renderJadwal() {
+  const days = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+  const colors = ['#C9A84C','#5C8AE0','#4CAF8A','#8A5CE0','#E05C6A','#E07C5C'];
+  const jadwal = {
+    'Senin': [['09:00','Zara Amelia','Rizky P.','60 mnt','gold'],['13:00','Rafa Adiputra','Citra H.','45 mnt','blue']],
+    'Selasa': [['10:30','Nathan Putra','Nadia K.','45 mnt','green']],
+    'Rabu': [['09:00','Keisha Ramadhani','Rizky P.','60 mnt','purple'],['15:00','Bella Salsabila','Nadia K.','60 mnt','gold']],
+    'Kamis': [['13:00','Gibran R.','Rizky P.','45 mnt','blue']],
+    'Jumat': [['17:00','Zara Amelia','Rizky P.','60 mnt','gold']],
+    'Sabtu': [['09:00','Rafa Adiputra','Citra H.','45 mnt','blue'],['11:00','Keisha Ramadhani','Rizky P.','60 mnt','green']],
+  };
+  return `
+    <div class="section-header">
+      <div class="section-title">Jadwal Les — Juni 2026</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-sm btn-outline">Filter Guru</button>
+        <button class="btn-sm btn-gold">+ Tambah Jadwal</button>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
+      ${days.map((d,i) => `
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title" style="font-size:16px;">${d}</div>
+            <span style="font-size:12px;color:var(--ivory-dim);">${(jadwal[d]||[]).length} sesi</span>
+          </div>
+          <div class="card-body">
+            ${(jadwal[d]||[]).map(([t,n,g,dur,c]) => `
+              <div style="padding:10px;background:rgba(${c==='gold'?'201,168,76':c==='blue'?'92,138,224':c==='green'?'76,175,138':'138,92,224'},0.12);border-radius:8px;margin-bottom:8px;border-left:3px solid var(--${c});">
+                <div style="font-size:12px;color:var(--${c});font-weight:700;">${t}</div>
+                <div style="font-size:13px;font-weight:600;margin:2px 0;">${n}</div>
+                <div style="font-size:12px;color:var(--ivory-dim);">${g} • ${dur}</div>
+              </div>
+            `).join('')}
+            ${(jadwal[d]||[]).length === 0 ? '<div style="color:var(--ivory-dim);font-size:12px;text-align:center;padding:12px;">Tidak ada jadwal</div>' : ''}
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// ABSENSI ADMIN
+// ═══════════════════════════════════════════
+function renderAbsensiAdmin() {
+  return `
+    <div class="section-header">
+      <div class="section-title">Rekap Absensi — Juni 2026</div>
+      <button class="btn-sm btn-outline">Export</button>
+    </div>
+    <div class="grid-2" style="margin-bottom:20px;">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Zara Amelia</div><span class="badge badge-gold">Rizky Pratama</span></div>
+        <div class="card-body">
+          <div style="margin-bottom:14px;font-size:13px;color:var(--ivory-dim);">Minggu 1–4 Juni 2026</div>
+          <div class="absen-grid">
+            ${['✅','✅','✅','⛔','✅','✅','🔄','✅','✅','✅','✅','✅','','','','','','','',''].map(s => `
+              <div class="absen-cell ${s==='✅'?'absen-hadir':s==='⛔'?'absen-alpha':s==='🔄'?'absen-reschedule':'absen-kosong'}">${s}</div>
+            `).join('')}
+          </div>
+          <div style="display:flex;gap:12px;margin-top:14px;font-size:12px;">
+            <span>✅ Hadir: 10</span>
+            <span>⛔ Alpha: 1</span>
+            <span>🔄 Reschedule: 1</span>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Nathan Putra</div><span class="badge badge-blue">Nadia Kusuma</span></div>
+        <div class="card-body">
+          <div style="margin-bottom:14px;font-size:13px;color:var(--ivory-dim);">Minggu 1–4 Juni 2026</div>
+          <div class="absen-grid">
+            ${['✅','✅','⛔','✅','✅','✅','✅','✅','⛔','✅','✅','✅','','','','','','','',''].map(s => `
+              <div class="absen-cell ${s==='✅'?'absen-hadir':s==='⛔'?'absen-alpha':s==='🔄'?'absen-reschedule':'absen-kosong'}">${s}</div>
+            `).join('')}
+          </div>
+          <div style="display:flex;gap:12px;margin-top:14px;font-size:12px;">
+            <span>✅ Hadir: 10</span>
+            <span>⛔ Alpha: 2</span>
+            <span>🔄 Reschedule: 0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Make-up Class Tracker</div><span class="badge badge-red">2 belum diganti</span></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Murid</th><th>Tanggal Kosong</th><th>Alasan</th><th>Deadline Ganti</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Zara Amelia</td><td>Kamis, 5 Jun</td><td>Guru berhalangan</td><td>4 Agustus 2026</td><td><span class="badge badge-red">Belum diganti</span></td></tr>
+            <tr><td>Nathan Putra</td><td>Rabu, 28 Mei</td><td>Murid tidak hadir</td><td>27 Juli 2026</td><td><span class="badge badge-gold">Dijadwalkan 12 Jun</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// KALENDER
+// ═══════════════════════════════════════════
+function renderKalender() {
+  const days = [];
+  // June 2026 starts on Monday
+  for (let i = 0; i < 6; i++) days.push('');  // padding (sat/sun before)
+  // Actually June 1 2026 = Monday, so no padding needed. Let me just use 30 days
+  const libur = [7, 14, 21, 28]; // Minggu
+  const tanggalMerah = [1]; // Hari Lahir Pancasila
+  const hasEvent = [3, 5, 10, 12, 17, 19, 24, 26];
+
+  return `
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Kalender Juni 2026</div></div>
+        <div class="card-body">
+          <div class="mini-cal">
+            <div class="cal-days-header">
+              ${['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(d => `<div class="cal-day-name">${d}</div>`).join('')}
+            </div>
+            <div class="cal-days">
+              ${[...Array(30)].map((_,i) => {
+                const d = i+1;
+                const isMinggu = libur.includes(d);
+                const isMerah = tanggalMerah.includes(d);
+                const isEvent = hasEvent.includes(d);
+                const isToday = d === 7;
+                let cls = 'cal-day';
+                if (isToday) cls += ' today';
+                else if (isMerah) cls += ' tanggal-merah';
+                else if (isMinggu) cls += ' libur';
+                if (isEvent && !isToday) cls += ' has-event';
+                return `<div class="${cls}" title="${isMerah?'Hari Lahir Pancasila':''}">${d}</div>`;
+              }).join('')}
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Keterangan Kalender</div></div>
+        <div class="card-body">
+          <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
+            ${[
+              ['#4DB87A','Hari ini','7 Jun 2026'],
+              ['#E05C6A','Tanggal merah','1 Jun — Hari Lahir Pancasila'],
+              ['rgba(255,255,255,0.3)','Hari Minggu','7, 14, 21, 28 Jun'],
+              ['#5C8AE0','Ada sesi les','Jadwal pertemuan murid'],
+            ].map(([c,l,d]) => `
+              <div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--bg3);border-radius:8px;">
+                <div style="width:28px;height:28px;border-radius:6px;background:${c};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--bg);">1</div>
+                <div>
+                  <div style="font-size:13px;font-weight:700;">${l}</div>
+                  <div style="font-size:12px;color:var(--ivory-dim);">${d}</div>
+                </div>
+              </div>
+            `).join('')}
+          </div>
+          <button class="btn-sm btn-gold" style="width:100%;">+ Tambah Libur / Tanggal Merah</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// INVOICE ADMIN
+// ═══════════════════════════════════════════
+function renderInvoice() {
+  const sudahBayar = invoiceList.filter(i => i.status==='Sudah Bayar').reduce((s,i)=>s+i.nominal,0);
+  const menunggu = invoiceList.filter(i => i.status==='Menunggu Konfirmasi').reduce((s,i)=>s+i.nominal,0);
+  const belumBayar = invoiceList.filter(i => i.status==='Belum Bayar').reduce((s,i)=>s+i.nominal,0);
+  return `
+    <div class="section-header">
+      <div class="section-title">Invoice Juni 2026</div>
+      <div style="display:flex;gap:8px;">
+        <button class="btn-sm btn-outline" onclick="showToast('Export PDF sedang diproses...','info')">Export PDF</button>
+        <button class="btn-sm btn-gold" onclick="openModal('modal-gen-invoice')">Generate Invoice</button>
+      </div>
+    </div>
+    <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
+      <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value" style="font-size:20px;">Rp ${(sudahBayar/1000000).toFixed(1)}jt</div><div class="stat-label">Sudah Dibayar</div></div>
+      <div class="stat-card gold"><div class="stat-icon">⏳</div><div class="stat-value" style="font-size:20px;">Rp ${(menunggu/1000).toFixed(0)}rb</div><div class="stat-label">Menunggu Konfirmasi</div></div>
+      <div class="stat-card red"><div class="stat-icon">❌</div><div class="stat-value" style="font-size:20px;">Rp ${(belumBayar/1000).toFixed(0)}rb</div><div class="stat-label">Belum Bayar</div></div>
+      <div class="stat-card blue"><div class="stat-icon">📋</div><div class="stat-value" style="font-size:20px;">${invoiceList.length}</div><div class="stat-label">Total Invoice</div></div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>No. Invoice</th><th>Murid</th><th>Detail</th><th>Nominal</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody>
+            ${invoiceList.map((inv, idx) => `
+              <tr>
+                <td style="font-family:monospace;font-size:12px;color:var(--ivory-dim);">${inv.id}</td>
+                <td><strong>${inv.murid}</strong></td>
+                <td style="color:var(--ivory-dim)">${inv.detail}</td>
+                <td style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:700;color:var(--gold);">Rp ${inv.nominal.toLocaleString('id-ID')}</td>
+                <td><span class="badge badge-${inv.statusColor}">${inv.status}</span></td>
+                <td>
+                  <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                    ${inv.status==='Menunggu Konfirmasi' ? `<button class="btn-sm btn-gold" onclick="openKonfirmasi(${idx})">✓ Konfirmasi</button>` : ''}
+                    <button class="btn-sm btn-ghost" onclick="showToast('Download invoice...','info')">📥</button>
+                    <button class="btn-sm btn-outline" onclick="showToast('Link WA disalin!','success')">🔗 WA</button>
+                  </div>
+                </td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// PENDAPATAN
+// ═══════════════════════════════════════════
+function renderPendapatan() {
+  const bulan = ['Jan','Feb','Mar','Apr','Mei','Jun'];
+  const vals = [18,19,21,20,23,25];
+  const maxVal = Math.max(...vals);
+  return `
+    <div class="stats-grid">
+      <div class="stat-card gold"><div class="stat-icon">💰</div><div class="stat-value">24.6jt</div><div class="stat-label">Pendapatan Kotor Juni</div></div>
+      <div class="stat-card blue"><div class="stat-icon">💳</div><div class="stat-value">17.2jt</div><div class="stat-label">Gaji Guru</div></div>
+      <div class="stat-card green"><div class="stat-icon">📈</div><div class="stat-value">7.4jt</div><div class="stat-label">Pendapatan Bersih</div></div>
+      <div class="stat-card purple"><div class="stat-icon">📊</div><div class="stat-value">30%</div><div class="stat-label">Margin Agency</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Tren Pendapatan 2026</div></div>
+      <div class="card-body">
+        <div style="margin-bottom:8px;font-size:12px;color:var(--ivory-dim);">Dalam jutaan rupiah</div>
+        <div class="chart-bars">
+          ${bulan.map((b,i) => `
+            <div class="chart-bar-wrap">
+              <div style="font-size:12px;color:var(--ivory-dim);margin-bottom:4px;">${vals[i]}jt</div>
+              <div class="chart-bar" style="height:${(vals[i]/maxVal)*100}%;flex:1;${i===5?'background:linear-gradient(to top,var(--accent),var(--accent-light));':'background:var(--surface2);'}"></div>
+              <div class="chart-label">${b}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// GAJI GURU
+// ═══════════════════════════════════════════
+function renderGajiGuru() {
+  const totalGaji = guruList.reduce((s,g)=>s+g.gajiEst,0);
+  return `
+    <div class="section-header">
+      <div class="section-title">Gaji Guru — Juni 2026</div>
+      <div style="display:flex;gap:8px;">
+        <span style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:700;color:var(--gold);line-height:32px;">Total: Rp ${totalGaji.toLocaleString('id-ID')}</span>
+        <button class="btn-sm btn-gold" onclick="showToast('Proses transfer gaji semua guru...','info')">Proses Semua</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Guru</th><th>Murid</th><th>Sesi</th><th>Share</th><th>Est. Gaji Bersih</th><th>Status</th><th>Aksi</th></tr></thead>
+          <tbody>
+            ${guruList.map((g, i) => {
+              const isTransferred = i % 2 !== 0;
+              return `
+              <tr>
+                <td>
+                  <div class="avatar-row">
+                    <div class="avatar" style="background:${g.color}">${g.nama[0]}</div>
+                    <strong>${g.nama}</strong>
+                  </div>
+                </td>
+                <td>${g.murid} murid</td>
+                <td>${g.sesi} sesi</td>
+                <td>70%</td>
+                <td style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:700;color:var(--gold);">Rp ${g.gajiEst.toLocaleString('id-ID')}</td>
+                <td><span class="badge badge-${isTransferred?'green':'red'}">${isTransferred?'Sudah Transfer':'Belum Transfer'}</span></td>
+                <td>
+                  <div style="display:flex;gap:6px;">
+                    <button class="btn-sm btn-ghost" onclick="openSlipGaji(${i})">📋 Slip</button>
+                    ${!isTransferred?`<button class="btn-sm btn-gold" onclick="showToast('Transfer ke ${g.nama}...','info')">Transfer</button>`:`<button class="btn-sm btn-ghost" onclick="showToast('Bukti transfer ${g.nama}','info')">Bukti</button>`}
+                  </div>
+                </td>
+              </tr>`;
+            }).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// GURU: DASHBOARD
+// ═══════════════════════════════════════════
+function renderGuruDashboard() {
+  return `
+    <div class="stats-grid">
+      <div class="stat-card gold"><div class="stat-icon">🎓</div><div class="stat-value">12</div><div class="stat-label">Murid Aktif</div></div>
+      <div class="stat-card blue"><div class="stat-icon">📅</div><div class="stat-value">3</div><div class="stat-label">Sesi Hari Ini</div></div>
+      <div class="stat-card green"><div class="stat-icon">💰</div><div class="stat-value">4.8jt</div><div class="stat-label">Estimasi Gaji Juni</div></div>
+      <div class="stat-card purple"><div class="stat-icon">📝</div><div class="stat-value">2</div><div class="stat-label">Absensi Belum Diisi</div><div class="stat-change down">⚠ Segera isi!</div></div>
+    </div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Jadwal Hari Ini</div><span class="badge badge-gold">Minggu, 8 Jun</span></div>
+        <div class="card-body">
+          <div class="schedule-list">
+            ${[['09:00','Zara Amelia','60 mnt • Home Visit • Grade 3'],['13:00','Keisha Ramadhani','60 mnt • Online • Grade 4'],['17:00','Bella Salsabila','60 mnt • Home Visit • Grade 2']].map(([t,n,d]) => `
+              <div class="schedule-item">
+                <div class="schedule-time">${t}<span>WIB</span></div>
+                <div class="schedule-info"><div class="schedule-name">${n}</div><div class="schedule-detail">${d}</div></div>
+                <button class="btn-sm btn-gold">Absen</button>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Notifikasi</div></div>
+        <div class="card-body">
+          <div class="notif-list">
+            <div class="notif-item warn"><div class="notif-icon">⏰</div><div><div class="notif-text">Isi absensi Zara Amelia (Jumat, 6 Jun) sebelum hari ini habis</div><div class="notif-time">Deadline: hari ini</div></div></div>
+            <div class="notif-item info"><div class="notif-icon">📹</div><div><div class="notif-text">Deadline upload video laporan bulanan: 25 Juni 2026 (18 hari lagi)</div><div class="notif-time">Sisa: 18 hari</div></div></div>
+            <div class="notif-item success"><div class="notif-icon">💳</div><div><div class="notif-text">Gaji Mei sudah ditransfer: Rp 4.600.000</div><div class="notif-time">2 hari lalu</div></div></div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// GURU: MURID SAYA
+// ═══════════════════════════════════════════
+function renderMuridSaya() {
+  const murid = [
+    ['Zara Amelia','Grade 3','Senin & Jumat 09:00','Home Visit','94%'],
+    ['Nathan Putra','Grade 2','Rabu 10:30','Studio','87%'],
+    ['Keisha Ramadhani','Grade 4','Kamis 13:00','Online','100%'],
+    ['Bella Salsabila','Grade 2','Jumat 17:00','Home Visit','91%'],
+  ];
+  const colors = ['#C9A84C','#5C8AE0','#4CAF8A','#8A5CE0'];
+  return `
+    <div class="section-title" style="margin-bottom:20px;">Murid Saya (12 aktif)</div>
+    <div class="grid-2">
+      ${murid.map(([n,l,j,t,h],i) => `
+        <div class="card">
+          <div class="card-body">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:14px;">
+              <div class="avatar" style="width:44px;height:44px;font-size:16px;background:${colors[i]};">${n[0]}</div>
+              <div><div style="font-size:15px;font-weight:700;">${n}</div><div style="font-size:12px;color:var(--ivory-dim);">${l}</div></div>
+              <span class="badge badge-${t==='Online'?'blue':'gold'}" style="margin-left:auto;">${t}</span>
+            </div>
+            <div class="info-row"><span class="info-label">Jadwal</span><span class="info-value">${j}</span></div>
+            <div class="info-row"><span class="info-label">Kehadiran Bulan Ini</span><span class="info-value"><strong style="color:var(--green)">${h}</strong></span></div>
+            <div style="display:flex;gap:8px;margin-top:12px;">
+              <button class="btn-sm btn-ghost" style="flex:1;">Catatan</button>
+              <button class="btn-sm btn-ghost" style="flex:1;">Absensi</button>
+              <button class="btn-sm btn-gold" style="flex:1;">Video</button>
+            </div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// GURU: INPUT ABSENSI
+// ═══════════════════════════════════════════
+function renderInputAbsensi() {
+  return `
+    <div class="section-header">
+      <div class="section-title">Input Absensi</div>
+      <span class="badge badge-red">2 belum diisi</span>
+    </div>
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header" style="background:rgba(224,92,106,0.08);border-color:rgba(224,92,106,0.2);">
+        <div class="card-title" style="color:var(--red);">⚠ Belum Diisi</div>
+      </div>
+      <div class="card-body">
+        ${[['Zara Amelia','Jumat, 6 Jun 2026','09:00','60 mnt'],['Nathan Putra','Rabu, 4 Jun 2026','10:30','45 mnt']].map(([n,t,j,d]) => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:14px;background:var(--bg3);border-radius:10px;margin-bottom:10px;">
+            <div>
+              <div style="font-size:14px;font-weight:700;">${n}</div>
+              <div style="font-size:12px;color:var(--ivory-dim);">${t} • ${j} • ${d}</div>
+            </div>
+            <button class="btn-sm btn-gold" onclick="showAbsensiForm()">Isi Absensi</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+    <div class="card" id="absensi-form" style="display:none;">
+      <div class="card-header"><div class="card-title">Absensi: Zara Amelia</div></div>
+      <div class="card-body">
+        <div class="login-label" style="margin-bottom:10px;">Status Kehadiran</div>
+        <div style="display:flex;gap:8px;margin-bottom:16px;flex-wrap:wrap;">
+          ${[['✅ Hadir','green'],['⛔ Tidak Hadir (Hangus)','red'],['🎁 Extra Time','gold'],['🔄 Reschedule','blue'],['🏖️ Guru Berhalangan','gray']].map(([l,c]) => `
+            <button class="btn-sm btn-outline" style="flex:1;">${l}</button>
+          `).join('')}
+        </div>
+        <div class="login-label" style="margin-bottom:8px;">Durasi Sesi</div>
+        <div style="display:flex;gap:8px;margin-bottom:16px;">
+          ${['30 mnt','45 mnt','60 mnt','90 mnt'].map(d => `<button class="btn-sm ${d==='60 mnt'?'btn-gold':'btn-ghost'}">${d}</button>`).join('')}
+        </div>
+        <div class="login-label" style="margin-bottom:8px;">Catatan Les *</div>
+        <textarea style="width:100%;min-height:100px;background:var(--bg3);border:1.5px solid var(--border);border-radius:10px;padding:12px;color:var(--ivory);font-family:inherit;font-size:13px;outline:none;resize:vertical;" placeholder="Tulis catatan progress murid... (wajib diisi)"></textarea>
+        <div style="display:flex;gap:10px;margin-top:14px;">
+          <button class="btn-sm btn-outline" style="flex:1;" onclick="hideAbsensiForm()">Batal</button>
+          <button class="btn-sm btn-gold" style="flex:1;">Submit Absensi ✓</button>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+function showAbsensiForm() {
+  const f = document.getElementById('absensi-form');
+  if (f) f.style.display = 'block';
+}
+function hideAbsensiForm() {
+  const f = document.getElementById('absensi-form');
+  if (f) f.style.display = 'none';
+}
+
+// ═══════════════════════════════════════════
+// GURU: CATATAN LES
+// ═══════════════════════════════════════════
+function renderCatatanLes() {
+  return `
+    <div class="section-header">
+      <div class="section-title">Catatan Les</div>
+      <select style="background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:8px 12px;color:var(--ivory);font-family:inherit;font-size:13px;">
+        <option>Zara Amelia</option>
+        <option>Keisha Ramadhani</option>
+        <option>Bella Salsabila</option>
+      </select>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Zara Amelia — Grade 3</div><button class="btn-sm btn-outline">🔗 Share ke WA Ortu</button></div>
+      <div class="card-body">
+        ${[
+          ['7 Jun 2026','Pertemuan ke-22','Latihan tangga nada C major dan G major. Zara sudah bisa memainkan dengan tempo stabil 80 BPM. Latihan lagu "Für Elise" bagian A. Perlu lebih banyak latihan tangan kiri di rumah.'],
+          ['31 Mei 2026','Pertemuan ke-21','Review chord dasar. Zara progress bagus, sudah hafal chord C, F, G, Am. Mulai intro lagu baru: "Für Elise". Homework: latihan tangan kanan saja 15 menit/hari.'],
+          ['24 Mei 2026','Pertemuan ke-20','Ujian naik level Grade 3. Hasil: LULUS ✅. Zara tampil percaya diri. Mulai materi Grade 3 dari buku Beyer halaman 45.'],
+        ].map(([d,s,t]) => `
+          <div class="catatan-item">
+            <div class="catatan-header">
+              <span class="catatan-date">📅 ${d}</span>
+              <span class="catatan-sesi">${s}</span>
+            </div>
+            <div class="catatan-text">${t}</div>
+          </div>
+        `).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// GURU: LAPORAN VIDEO
+// ═══════════════════════════════════════════
+function renderLaporanVideo() {
+  return `
+    <div class="section-header">
+      <div class="section-title">Laporan Video Bulanan</div>
+      <span class="badge badge-red">3 belum upload</span>
+    </div>
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header"><div class="card-title">Status Upload — Juni 2026</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Murid</th><th>Status</th><th>Upload Date</th><th>Link</th></tr></thead>
+          <tbody>
+            ${[
+              ['Zara Amelia','Sudah Upload','3 Jun 2026','green'],
+              ['Keisha Ramadhani','Belum Upload','—','red'],
+              ['Bella Salsabila','Belum Upload','—','red'],
+              ['Nathan Putra','Sudah Upload','1 Jun 2026','green'],
+              ['Rafa Adiputra','Belum Upload','—','red'],
+            ].map(([n,s,d,c]) => `
+              <tr>
+                <td><strong>${n}</strong></td>
+                <td><span class="badge badge-${c}">${s}</span></td>
+                <td style="color:var(--ivory-dim);">${d}</td>
+                <td>${c==='green'?'<button class="btn-sm btn-ghost">🔗 YouTube Link</button>':'<button class="btn-sm btn-gold">+ Paste Link</button>'}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div class="grid-2">
+      ${[['Zara Amelia','Grade 3 • Jun 2026'],['Nathan Putra','Grade 2 • Jun 2026']].map(([n,s]) => `
+        <div class="video-card">
+          <div class="video-thumb">
+            🎹
+            <div class="video-play">▶</div>
+          </div>
+          <div class="video-info">
+            <div class="video-title">${n} — Progress Video</div>
+            <div class="video-meta">${s} • YouTube Unlisted</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// GURU: TARIF
+// ═══════════════════════════════════════════
+function renderTarifGuru() {
+  return `
+    <div class="section-title" style="margin-bottom:20px;">Tarif & Fee Saya</div>
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Tarif per Sesi</div></div>
+        <div class="card-body">
+          ${[
+            ['Grade 1 • 45 mnt • Studio','Rp 80.000'],
+            ['Grade 1 • 60 mnt • Studio','Rp 100.000'],
+            ['Grade 2–3 • 45 mnt • Home','Rp 110.000'],
+            ['Grade 2–3 • 60 mnt • Home','Rp 130.000'],
+            ['Grade 4–5 • 60 mnt • Online','Rp 120.000'],
+          ].map(([l,a]) => `
+            <div class="tarif-row">
+              <div><div class="tarif-info">${l}</div></div>
+              <div class="tarif-amount">${a}</div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Potongan Agency</div></div>
+        <div class="card-body">
+          <div style="text-align:center;padding:20px 0;">
+            <div style="font-family:'Outfit',sans-serif;font-size:64px;font-weight:700;color:var(--gold);">30%</div>
+            <div style="color:var(--ivory-dim);font-size:14px;">Potongan agency dari total tarif murid</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:14px;text-align:center;">
+            <div style="font-size:12px;color:var(--ivory-dim);margin-bottom:4px;">Kamu terima (70%):</div>
+            <div style="font-family:'Outfit',sans-serif;font-size:24px;font-weight:700;color:var(--green);">Rp 70.000 – Rp 91.000/sesi</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// GURU: PENGHASILAN
+// ═══════════════════════════════════════════
+function renderPenghasilan() {
+  return `
+    <div class="stats-grid" style="grid-template-columns:repeat(3,1fr);">
+      <div class="stat-card gold"><div class="stat-icon">💰</div><div class="stat-value">4.8jt</div><div class="stat-label">Estimasi Juni</div></div>
+      <div class="stat-card green"><div class="stat-icon">✅</div><div class="stat-value">4.6jt</div><div class="stat-label">Diterima Mei</div></div>
+      <div class="stat-card blue"><div class="stat-icon">📊</div><div class="stat-value">48 sesi</div><div class="stat-label">Total Sesi Juni</div></div>
+    </div>
+    <div class="card">
+      <div class="card-header"><div class="card-title">Rincian per Murid — Juni 2026</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Murid</th><th>Sesi</th><th>Tarif/Sesi</th><th>Total Kotor</th><th>Share Guru (70%)</th></tr></thead>
+          <tbody>
+            ${[
+              ['Zara Amelia','8','Rp 130.000','Rp 1.040.000','Rp 728.000'],
+              ['Keisha Ramadhani','8','Rp 120.000','Rp 960.000','Rp 672.000'],
+              ['Bella Salsabila','8','Rp 130.000','Rp 1.040.000','Rp 728.000'],
+              ['Nathan Putra','6','Rp 110.000','Rp 660.000','Rp 462.000'],
+              ['Rafa Adiputra','6','Rp 100.000','Rp 600.000','Rp 420.000'],
+            ].map(([n,s,t,tk,sg]) => `
+              <tr>
+                <td><strong>${n}</strong></td>
+                <td>${s} sesi</td>
+                <td style="color:var(--ivory-dim);">${t}</td>
+                <td>${tk}</td>
+                <td style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:700;color:var(--gold);">${sg}</td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// ORTU: DASHBOARD
+// ═══════════════════════════════════════════
+function renderOrtuDashboard() {
+  return `
+    <div class="reminder-banner">
+      <div class="reminder-icon">🔔</div>
+      <div>
+        <div class="reminder-title">Pengingat Les Besok!</div>
+        <div class="reminder-sub">Zara Amelia • Senin, 9 Jun 2026 • Rizky Pratama</div>
+        <div class="reminder-sub" style="margin-top:4px;">📍 Home Visit • 60 menit</div>
+      </div>
+      <div class="reminder-time">
+        <div class="time-big">09:00</div>
+        <div class="time-label">WIB</div>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div class="card">
+        <div class="card-header"><div class="card-title">Info Murid</div></div>
+        <div class="card-body">
+          <div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">
+            <div class="avatar" style="width:56px;height:56px;font-size:22px;background:var(--accent);">A</div>
+            <div>
+              <div style="font-size:18px;font-weight:700;">Zara Amelia</div>
+              <div style="font-size:13px;color:var(--ivory-dim);">Grade 3 • Bergabung Jan 2025</div>
+            </div>
+          </div>
+          <div class="info-row"><span class="info-label">Guru</span><span class="info-value">Rizky Pratama</span></div>
+          <div class="info-row"><span class="info-label">Jadwal Rutin</span><span class="info-value">Senin & Jumat 09:00</span></div>
+          <div class="info-row"><span class="info-label">Tipe Les</span><span class="info-value">Home Visit</span></div>
+          <div class="info-row"><span class="info-label">Kehadiran Bulan Ini</span><span class="info-value" style="color:var(--green);font-weight:700;">10/11 pertemuan (91%)</span></div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><div class="card-title">Invoice Aktif</div><span class="badge badge-red">Belum Bayar</span></div>
+        <div class="card-body">
+          <div style="text-align:center;padding:16px 0;">
+            <div style="font-size:12px;color:var(--ivory-dim);margin-bottom:8px;">Tagihan Juni 2026</div>
+            <div style="font-family:'Outfit',sans-serif;font-size:48px;font-weight:700;color:var(--gold);">Rp 480.000</div>
+            <div style="font-size:13px;color:var(--ivory-dim);margin-top:4px;">4 sesi × 60 mnt × Rp 120.000</div>
+          </div>
+          <div style="background:var(--bg3);border-radius:10px;padding:12px;margin-top:10px;font-size:13px;">
+            <div style="font-weight:600;margin-bottom:6px;">Transfer ke:</div>
+            <div style="color:var(--ivory-dim);">BCA 1234567890 a/n Pianotes Music</div>
+          </div>
+          <div style="display:flex;gap:8px;margin-top:14px;">
+            <button class="btn-sm btn-outline" style="flex:1;" onclick="showToast('Download invoice...','info')">📥 Download</button>
+            <button class="btn-sm btn-gold" style="flex:1;" onclick="openModal('modal-upload-bukti')">📸 Upload Bukti Bayar</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Catatan Les Terbaru</div><button class="btn-sm btn-outline">Lihat Semua</button></div>
+      <div class="card-body">
+        <div class="catatan-item">
+          <div class="catatan-header">
+            <span class="catatan-date">📅 7 Jun 2026</span>
+            <span class="catatan-sesi">Pertemuan ke-22</span>
+          </div>
+          <div class="catatan-text">Latihan tangga nada C major dan G major. Zara sudah bisa memainkan dengan tempo stabil 80 BPM. Latihan lagu "Für Elise" bagian A. Perlu lebih banyak latihan tangan kiri di rumah.</div>
+        </div>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// ORTU: Additional Pages (simplified)
+// ═══════════════════════════════════════════
+function renderProfilMurid() {
+  return `
+    <div class="card">
+      <div class="card-body">
+        <div style="display:flex;align-items:center;gap:20px;margin-bottom:24px;">
+          <div class="avatar" style="width:72px;height:72px;font-size:28px;background:var(--accent);">A</div>
+          <div>
+            <div style="font-size:24px;font-weight:700;font-family:'Outfit',sans-serif;">Zara Amelia</div>
+            <div style="font-size:14px;color:var(--ivory-dim);">ID Murid: PLN-2025-001</div>
+            <span class="badge badge-green" style="margin-top:6px;">Aktif</span>
+          </div>
+        </div>
+        <div class="info-row"><span class="info-label">Nama Orang Tua</span><span class="info-value">Ibu Anita Rahayu</span></div>
+        <div class="info-row"><span class="info-label">No. Telepon</span><span class="info-value">0812-3456-7890</span></div>
+        <div class="info-row"><span class="info-label">Alamat</span><span class="info-value">Jl. Mawar No. 12, Jakarta Selatan</span></div>
+        <div class="info-row"><span class="info-label">Level Saat Ini</span><span class="info-value">Grade 3</span></div>
+        <div class="info-row"><span class="info-label">Guru</span><span class="info-value">Rizky Pratama</span></div>
+        <div class="info-row"><span class="info-label">Tanggal Bergabung</span><span class="info-value">15 Januari 2025</span></div>
+        <div class="info-row"><span class="info-label">Tipe Les</span><span class="info-value">Home Visit</span></div>
+        <div class="info-row"><span class="info-label">Durasi</span><span class="info-value">60 menit/sesi</span></div>
+      </div>
+    </div>
+  `;
+}
+
+function renderJadwalMurid() {
+  return `
+    <div class="section-header">
+      <div class="section-title">Jadwal Les Zara Amelia</div>
+      <button class="btn-sm btn-gold" onclick="openModal('modal-reschedule')">🔄 Ajukan Reschedule</button>
+    </div>
+    <div class="card" style="margin-bottom:16px;">
+      <div class="card-header"><div class="card-title">Jadwal Rutin</div></div>
+      <div class="card-body">
+        <div class="schedule-list">
+          ${[
+            ['Senin','09:00','Jadwal Rutin','Rizky Pratama · 60 mnt · Home Visit','green'],
+            ['Jumat','09:00','Jadwal Rutin','Rizky Pratama · 60 mnt · Home Visit','green'],
+            ['Selasa, 10 Jun','14:00','Reschedule (ganti 5 Jun)','Rizky Pratama · 60 mnt · Home Visit','gold'],
+          ].map(([hari,jam,jenis,detail,c]) => `
+            <div class="schedule-item">
+              <div>
+                <div style="font-size:11px;color:var(--${c});font-weight:700;margin-bottom:2px;">${hari}</div>
+                <div class="schedule-time" style="font-size:26px;">${jam}<span>WIB</span></div>
+              </div>
+              <div class="schedule-info">
+                <div class="schedule-name">${jenis}</div>
+                <div class="schedule-detail">${detail}</div>
+              </div>
+              <span class="badge badge-${c==='green'?'green':'gold'}" style="font-size:10px;">${c==='green'?'Rutin':'Reschedule'}</span>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="card-title">Kebijakan Reschedule</div>
+      </div>
+      <div class="card-body">
+        <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--ivory-dim);">
+          <div style="display:flex;gap:10px;"><span style="color:var(--accent);font-size:16px;">📋</span><span>Pengajuan min. <strong style="color:var(--ivory);">24 jam sebelum</strong> jadwal yang akan di-reschedule</span></div>
+          <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:16px;">📅</span><span>Maks. <strong style="color:var(--ivory);">2× reschedule</strong> per bulan</span></div>
+          <div style="display:flex;gap:10px;"><span style="color:var(--blue);font-size:16px;">🔄</span><span>Make-up class dapat dilakukan dalam <strong style="color:var(--ivory);">60 hari</strong></span></div>
+          <div style="display:flex;gap:10px;"><span style="color:var(--red);font-size:16px;">⚠</span><span>Tidak hadir tanpa kabar = sesi <strong style="color:var(--red);">hangus</strong></span></div>
+        </div>
+        <button class="btn-sm btn-gold" style="width:100%;margin-top:16px;padding:11px;" onclick="openModal('modal-reschedule')">Ajukan Reschedule Sekarang</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderCatatanProgress() {
+  return renderCatatanLes(); // Reuse catatan les view
+}
+
+function renderVideoMurid() {
+  return `
+    <div class="section-title" style="margin-bottom:20px;">Video Bulanan Zara Amelia</div>
+    <div class="grid-2">
+      ${[['Jun 2026','Upload 3 Jun 2026'],['Mei 2026','Upload 1 Mei 2026'],['Apr 2026','Upload 2 Apr 2026'],['Mar 2026','Upload 28 Mar 2026']].map(([b,d]) => `
+        <div class="video-card">
+          <div class="video-thumb">🎹<div class="video-play">▶</div></div>
+          <div class="video-info">
+            <div class="video-title">Progress Video — ${b}</div>
+            <div class="video-meta">${d} • YouTube</div>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderInvoiceOrtu() {
+  const inv = invoiceList[0]; // Zara's invoice
+  const statusMap = { 'Belum Bayar': 'red', 'Menunggu Konfirmasi': 'gold', 'Sudah Bayar': 'green' };
+  const statusColor = statusMap[inv.status] || 'gray';
+  return `
+    <div class="section-title" style="margin-bottom:20px;">Invoice Aktif</div>
+    <div class="card" style="margin-bottom:20px;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Tagihan Juni 2026</div>
+          <div style="font-size:12px;color:var(--ivory-dim);margin-top:2px;">${inv.id}</div>
+        </div>
+        <span class="badge badge-${statusColor}">${inv.status}</span>
+      </div>
+      <div class="card-body">
+        <div style="text-align:center;padding:20px 0 8px;">
+          <div style="font-size:13px;color:var(--ivory-dim);margin-bottom:8px;">Zara Amelia · ${inv.detail}</div>
+          <div style="font-family:'Outfit',sans-serif;font-size:52px;font-weight:700;color:var(--gold);">Rp ${inv.nominal.toLocaleString('id-ID')}</div>
+          <div style="font-size:12px;color:var(--ivory-dim);margin-top:4px;">Jatuh tempo: 15 Juni 2026</div>
+        </div>
+
+        ${inv.status === 'Menunggu Konfirmasi' ? `
+        <div style="background:rgba(201,168,76,0.1);border:1px solid rgba(201,168,76,0.3);border-radius:10px;padding:14px;text-align:center;margin-top:10px;">
+          <div style="font-size:20px;margin-bottom:6px;">⏳</div>
+          <div style="font-weight:700;color:var(--gold);">Bukti Terkirim</div>
+          <div style="font-size:12px;color:var(--ivory-dim);margin-top:4px;">Menunggu konfirmasi dari admin Pianotes</div>
+        </div>` : inv.status === 'Sudah Bayar' ? `
+        <div style="background:rgba(76,175,138,0.1);border:1px solid rgba(76,175,138,0.3);border-radius:10px;padding:14px;text-align:center;margin-top:10px;">
+          <div style="font-size:20px;margin-bottom:6px;">✅</div>
+          <div style="font-weight:700;color:var(--green);">Pembayaran Lunas</div>
+          <div style="font-size:12px;color:var(--ivory-dim);margin-top:4px;">Dikonfirmasi admin pada 5 Jun 2026</div>
+        </div>` : `
+        <div style="background:var(--bg3);border-radius:10px;padding:14px;margin-top:12px;">
+          <div style="font-weight:600;margin-bottom:8px;font-size:13px;">Transfer ke:</div>
+          <div style="display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--ivory-dim);">
+            <div>🏦 BCA <strong style="color:var(--ivory);">1234567890</strong> a/n Pianotes Music</div>
+            <div>🏦 BNI <strong style="color:var(--ivory);">9876543210</strong> a/n Pianotes Music</div>
+            <div>📱 GoPay / OVO <strong style="color:var(--ivory);">08123456789</strong></div>
+          </div>
+        </div>
+        <div style="display:flex;gap:8px;margin-top:16px;">
+          <button class="btn-sm btn-outline" style="flex:1;" onclick="showToast('Download invoice...','info')">📥 Download</button>
+          <button class="btn-sm btn-gold" style="flex:1;padding:11px;" onclick="openModal('modal-upload-bukti')">📸 Upload Bukti Bayar</button>
+        </div>`}
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-header"><div class="card-title">Riwayat Invoice</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Bulan</th><th>Sesi</th><th>Nominal</th><th>Status</th></tr></thead>
+          <tbody>
+            ${[
+              ['Jun 2026','4 sesi','480.000',inv.status,statusColor],
+              ['Mei 2026','4 sesi','480.000','Sudah Bayar','green'],
+              ['Apr 2026','4 sesi','480.000','Sudah Bayar','green'],
+              ['Mar 2026','3 sesi','360.000','Sudah Bayar','green'],
+            ].map(([b,s,n,st,c]) => `
+              <tr>
+                <td><strong>${b}</strong></td>
+                <td style="color:var(--ivory-dim)">${s}</td>
+                <td style="font-family:'Outfit',sans-serif;font-size:16px;font-weight:700;color:var(--gold);">Rp ${n}</td>
+                <td><span class="badge badge-${c}">${st}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+function renderRiwayatBayar() {
+  return `
+    <div class="card">
+      <div class="card-header"><div class="card-title">Riwayat Pembayaran</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Bulan</th><th>Sesi</th><th>Nominal</th><th>Tgl Bayar</th><th>Status</th></tr></thead>
+          <tbody>
+            ${[
+              ['Jun 2026','4 sesi','Rp 480.000','—','Belum Bayar','red'],
+              ['Mei 2026','4 sesi','Rp 480.000','30 Mei 2026','Lunas','green'],
+              ['Apr 2026','4 sesi','Rp 480.000','28 Apr 2026','Lunas','green'],
+              ['Mar 2026','3 sesi','Rp 360.000','30 Mar 2026','Lunas','green'],
+            ].map(([b,s,n,t,st,c]) => `
+              <tr>
+                <td><strong>${b}</strong></td>
+                <td>${s}</td>
+                <td style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:700;color:var(--gold);">${n}</td>
+                <td style="color:var(--ivory-dim);">${t}</td>
+                <td><span class="badge badge-${c}">${st}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+</script>
+</body>
+</html>

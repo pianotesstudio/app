@@ -1031,14 +1031,17 @@
     </div>
 
     <div class="input-group">
-      <label>Email</label>
-      <input type="email" placeholder="email@pianotes.id" id="input-email">
+      <label id="label-email">Email / Username</label>
+      <input type="text" placeholder="email@pianotes.id" id="input-email" autocomplete="username">
     </div>
     <div class="input-group">
-      <label>Password</label>
-      <input type="password" placeholder="••••••••" id="input-pass">
+      <label id="label-pass">Password / PIN</label>
+      <input type="password" placeholder="••••" id="input-pass" autocomplete="current-password">
     </div>
 
+    <div id="login-error" style="display:none;color:var(--red);font-size:13px;text-align:center;padding:8px;background:rgba(224,92,106,0.12);border-radius:8px;margin-bottom:8px;">
+      Username atau PIN salah. Coba lagi.
+    </div>
     <button class="btn-primary" onclick="doLogin()">Masuk ke Dashboard</button>
   </div>
 </div>
@@ -1495,6 +1498,30 @@
   </div>
 </div>
 
+<!-- MODAL: Kredensial Akun Ortu -->
+<div class="modal-overlay" id="modal-cred">
+  <div class="modal-box" style="max-width:420px;text-align:center;">
+    <button class="modal-close" onclick="closeModal('modal-cred')">✕</button>
+    <div class="modal-title" id="cred-title">Kredensial Akun</div>
+    <div style="padding:20px 0 10px;">
+      <div style="font-size:13px;color:var(--ivory-dim);margin-bottom:6px;">Nama Murid</div>
+      <div style="font-size:18px;font-weight:800;color:var(--ivory);" id="cred-murid"></div>
+    </div>
+    <div style="background:var(--bg3);border-radius:14px;padding:20px;margin:16px 0;">
+      <div style="margin-bottom:18px;">
+        <div style="font-size:12px;color:var(--ivory-dim);margin-bottom:4px;">Username</div>
+        <div style="font-family:monospace;font-size:20px;font-weight:700;color:var(--accent);letter-spacing:1px;" id="cred-username"></div>
+      </div>
+      <div>
+        <div style="font-size:12px;color:var(--ivory-dim);margin-bottom:4px;">PIN</div>
+        <div style="font-family:monospace;font-size:36px;font-weight:900;color:var(--gold);letter-spacing:8px;" id="cred-pin"></div>
+      </div>
+    </div>
+    <div style="font-size:12px;color:var(--ivory-dim);margin-bottom:16px;">Bagikan kredensial ini ke orang tua murid untuk login ke portal.</div>
+    <button class="btn-sm btn-gold" style="width:100%;padding:12px;" onclick="closeModal('modal-cred')">Tutup</button>
+  </div>
+</div>
+
 <!-- MODAL: Input Absensi / Laporan -->
 <div class="modal-overlay" id="modal-absensi">
   <div class="modal-box" style="max-width:500px;">
@@ -1551,10 +1578,15 @@ const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFz
 const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
 // Local state (diisi dari Supabase)
-let muridList   = [];
-let guruList    = [];
-let invoiceList = [];
-let laporanList = [];
+let muridList    = [];
+let guruList     = [];
+let invoiceList  = [];
+let laporanList  = [];
+let ortuAkunList = [];
+
+// Logged-in ortu context (set on login)
+let loggedOrtuMurid = '';
+let loggedOrtuUser  = '';
 
 // ─── LOADERS ───
 async function loadMurid() {
@@ -1626,8 +1658,20 @@ async function loadLaporan() {
   }));
 }
 
+async function loadOrtuAkun() {
+  const { data, error } = await sb.from('ortu_akun').select('*').order('murid_nama');
+  if (error) { showToast('Gagal load akun ortu: ' + error.message, 'error'); return; }
+  ortuAkunList = (data || []).map(a => ({
+    dbId     : a.id,
+    muridNama: a.murid_nama  || '',
+    username : a.username    || '',
+    pin      : a.pin         || '',
+    status   : a.status      || 'Aktif',
+  }));
+}
+
 async function loadAllData() {
-  await Promise.all([loadMurid(), loadGuru(), loadInvoice(), loadLaporan()]);
+  await Promise.all([loadMurid(), loadGuru(), loadInvoice(), loadLaporan(), loadOrtuAkun()]);
 }
 
 // ─── REALTIME LISTENER ───
@@ -1636,8 +1680,76 @@ function setupRealtime() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'murid' },   () => loadMurid().then(() => { if(currentPage==='data-murid') navigateTo('data-murid'); }))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'guru' },    () => loadGuru().then(() => { if(currentPage==='data-guru') navigateTo('data-guru'); }))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'invoice' }, () => loadInvoice().then(() => { if(currentPage==='invoice'||currentPage==='invoice-ortu') navigateTo(currentPage); }))
-    .on('postgres_changes', { event: '*', schema: 'public', table: 'laporan' }, () => loadLaporan().then(() => { if(currentPage==='input-absensi'||currentPage==='catatan-les') navigateTo(currentPage); }))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'laporan' },    () => loadLaporan().then(() => { if(currentPage==='input-absensi'||currentPage==='catatan-les') navigateTo(currentPage); }))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'ortu_akun' }, () => loadOrtuAkun().then(() => { if(currentPage==='data-user') navigateTo('data-user'); }))
     .subscribe();
+}
+
+// ═══════════════════════════════════════════
+// NOTIFICATIONS (real-time computed)
+// ═══════════════════════════════════════════
+function buildNotifications() {
+  const today = new Date().toISOString().split('T')[0];
+  const items = [];
+
+  // Invoices belum bayar
+  const belumBayar = invoiceList.filter(i => i.status === 'Belum Bayar');
+  if (belumBayar.length) {
+    items.push({ type:'warn', icon:'💳',
+      text: belumBayar.length + ' invoice belum dibayar: ' + belumBayar.slice(0,2).map(i=>i.murid).join(', ') + (belumBayar.length>2?' ...':''),
+      time: 'Perlu tindakan' });
+  }
+
+  // Menunggu konfirmasi bayar
+  invoiceList.filter(i => i.status === 'Menunggu Konfirmasi').forEach(i => {
+    items.push({ type:'info', icon:'🔄',
+      text: 'Konfirmasi pembayaran ' + i.murid + ' — ' + formatRp(i.jumlah),
+      time: 'Menunggu konfirmasi' });
+  });
+
+  // Murid aktif belum ada absensi hari ini
+  const sudahHari = new Set(laporanList.filter(l => l.tanggal === today).map(l => l.murid));
+  const belumAbsen = muridList.filter(m => m.status === 'Aktif' && !sudahHari.has(m.nama));
+  if (belumAbsen.length) {
+    items.push({ type:'warn', icon:'⏰',
+      text: belumAbsen.length + ' murid belum diisi absensi hari ini: ' + belumAbsen.slice(0,2).map(m=>m.nama).join(', ') + (belumAbsen.length>2?' ...':''),
+      time: 'Hari ini' });
+  }
+
+  // Murid aktif tanpa jadwal
+  const tanpaJadwal = muridList.filter(m => m.status === 'Aktif' && !m.jadwal);
+  if (tanpaJadwal.length) {
+    items.push({ type:'info', icon:'📅',
+      text: tanpaJadwal.length + ' murid aktif belum punya jadwal: ' + tanpaJadwal.map(m=>m.nama).join(', '),
+      time: 'Perlu diatur' });
+  }
+
+  // Murid aktif yang belum punya akun ortu
+  const punyaAkun = new Set(ortuAkunList.map(a => a.muridNama));
+  const belumAkun = muridList.filter(m => m.status === 'Aktif' && !punyaAkun.has(m.nama));
+  if (belumAkun.length) {
+    items.push({ type:'info', icon:'👤',
+      text: belumAkun.length + ' murid belum punya akun orang tua',
+      time: 'Data User' });
+  }
+
+  if (!items.length) {
+    items.push({ type:'success', icon:'✅', text:'Semua beres! Tidak ada notifikasi baru.', time:'Sekarang' });
+  }
+  return items;
+}
+
+function renderNotifList(items) {
+  return `<div class="notif-list">` +
+    items.map(n => `
+      <div class="notif-item ${n.type}">
+        <div class="notif-icon">${n.icon}</div>
+        <div>
+          <div class="notif-text">${n.text}</div>
+          <div class="notif-time">${n.time}</div>
+        </div>
+      </div>`).join('') +
+    `</div>`;
 }
 
 // ═══════════════════════════════════════════
@@ -1997,10 +2109,39 @@ function selectRole(role) {
   currentRole = role;
   document.querySelectorAll('.role-btn').forEach(b => b.classList.remove('selected'));
   document.getElementById('role-' + role).classList.add('selected');
+  document.getElementById('login-error').style.display = 'none';
+  if (role === 'ortu') {
+    document.getElementById('label-email').textContent = 'Username';
+    document.getElementById('label-pass').textContent  = 'PIN (4 digit)';
+    document.getElementById('input-email').type        = 'text';
+    document.getElementById('input-email').placeholder = 'cth: zara.amelia';
+    document.getElementById('input-pass').placeholder  = '••••';
+  } else {
+    document.getElementById('label-email').textContent = 'Email';
+    document.getElementById('label-pass').textContent  = 'Password';
+    document.getElementById('input-email').type        = 'email';
+    document.getElementById('input-email').placeholder = 'email@pianotes.id';
+    document.getElementById('input-pass').placeholder  = '••••••••';
+  }
 }
 
-function doLogin() {
+async function doLogin() {
   if (!currentRole) { alert('Pilih role dulu!'); return; }
+  const errEl = document.getElementById('login-error');
+  errEl.style.display = 'none';
+
+  if (currentRole === 'ortu') {
+    const username = (document.getElementById('input-email').value || '').trim().toLowerCase();
+    const pin      = (document.getElementById('input-pass').value  || '').trim();
+    if (!username || !pin) { errEl.textContent = 'Username dan PIN wajib diisi.'; errEl.style.display = 'block'; return; }
+    // Load ortu akun first (ensure fresh data)
+    await loadOrtuAkun();
+    const akun = ortuAkunList.find(a => a.username === username && a.pin === pin && a.status === 'Aktif');
+    if (!akun) { errEl.textContent = 'Username atau PIN salah. Coba lagi.'; errEl.style.display = 'block'; return; }
+    loggedOrtuMurid = akun.muridNama;
+    loggedOrtuUser  = akun.username;
+  }
+
   document.getElementById('screen-login').classList.remove('active');
   document.getElementById('screen-app').classList.add('active');
   initApp();
@@ -2040,6 +2181,8 @@ const menus = {
     { id: 'invoice', icon: '🧾', label: 'Invoice', badge: '7' },
     { id: 'pendapatan', icon: '💰', label: 'Pendapatan' },
     { id: 'gaji-guru', icon: '💳', label: 'Gaji Guru' },
+    { section: 'Pengaturan' },
+    { id: 'data-user', icon: '🔑', label: 'Data User' },
   ],
   guru: [
     { section: 'Utama' },
@@ -2123,11 +2266,13 @@ function navigateTo(pageId) {
     dashboard: 'Dashboard', 'data-murid': 'Data Murid', 'data-guru': 'Data Guru',
     jadwal: 'Jadwal Les', absensi: 'Absensi', kalender: 'Kalender Les',
     invoice: 'Invoice', pendapatan: 'Rekap Pendapatan', 'gaji-guru': 'Gaji Guru',
+    'data-user': 'Data User / Akun Ortu',
     'murid-saya': 'Murid Saya', 'catatan-les': 'Catatan Les', 'laporan-video': 'Laporan Video',
     'tarif-guru': 'Tarif & Fee', penghasilan: 'Rekap Penghasilan',
     'profil-murid': 'Profil Murid', 'jadwal-murid': 'Jadwal Les',
     'catatan-progress': 'Catatan Progress', 'video-murid': 'Video Bulanan',
     'invoice-ortu': 'Invoice', 'riwayat-bayar': 'Riwayat Pembayaran',
+    'input-absensi': 'Input Absensi',
   };
 
   document.getElementById('page-title').textContent = pageTitles[pageId] || pageId;
@@ -2172,6 +2317,7 @@ function renderPage(id) {
     case 'video-murid': return renderVideoMurid();
     case 'invoice-ortu': return renderInvoiceOrtu();
     case 'riwayat-bayar': return renderRiwayatBayar();
+    case 'data-user':    return renderDataUser();
     default: return '<div style="color:var(--ivory-dim);padding:40px;text-align:center;">Halaman sedang dikembangkan 🚧</div>';
   }
 }
@@ -2285,35 +2431,16 @@ function renderAdminDashboard() {
       </div>
 
       <div class="card">
-        <div class="card-header">
-          <div class="card-title">Notifikasi Sistem</div>
-          <span class="badge badge-red">3 baru</span>
-        </div>
-        <div class="card-body">
-          <div class="notif-list">
-            <div class="notif-item warn">
-              <div class="notif-icon">⏰</div>
-              <div>
-                <div class="notif-text">Rizky P. belum upload absensi untuk Zara (Jumat, 6 Jun)</div>
-                <div class="notif-time">2 jam lalu</div>
-              </div>
-            </div>
-            <div class="notif-item info">
-              <div class="notif-icon">🔄</div>
-              <div>
-                <div class="notif-text">Nathan Putra mengajukan reschedule — Senin 9 Jun ke Selasa 10 Jun</div>
-                <div class="notif-time">4 jam lalu</div>
-              </div>
-            </div>
-            <div class="notif-item success">
-              <div class="notif-icon">💳</div>
-              <div>
-                <div class="notif-text">Pembayaran diterima dari Keisha Ramadhani — Rp 440.000</div>
-                <div class="notif-time">Kemarin 19:30</div>
-              </div>
-            </div>
+        ${(function() {
+          const notifs = buildNotifications();
+          const unread = notifs.filter(n => n.type !== 'success').length;
+          return `
+          <div class="card-header">
+            <div class="card-title">Notifikasi Sistem</div>
+            ${unread > 0 ? '<span class="badge badge-red">' + unread + ' perlu perhatian</span>' : '<span class="badge badge-green">Semua beres ✅</span>'}
           </div>
-        </div>
+          <div class="card-body">${renderNotifList(notifs)}</div>`;
+        })()}
       </div>
     </div>
   `;
@@ -2784,14 +2911,16 @@ function renderGuruDashboard() {
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><div class="card-title">Notifikasi</div></div>
-        <div class="card-body">
-          <div class="notif-list">
-            <div class="notif-item warn"><div class="notif-icon">⏰</div><div><div class="notif-text">Isi absensi Zara Amelia (Jumat, 6 Jun) sebelum hari ini habis</div><div class="notif-time">Deadline: hari ini</div></div></div>
-            <div class="notif-item info"><div class="notif-icon">📹</div><div><div class="notif-text">Deadline upload video laporan bulanan: 25 Juni 2026 (18 hari lagi)</div><div class="notif-time">Sisa: 18 hari</div></div></div>
-            <div class="notif-item success"><div class="notif-icon">💳</div><div><div class="notif-text">Gaji Mei sudah ditransfer: Rp 4.600.000</div><div class="notif-time">2 hari lalu</div></div></div>
-          </div>
-        </div>
+        ${(function() {
+          const today = new Date().toISOString().split('T')[0];
+          const sudah = new Set(laporanList.filter(l => l.tanggal === today).map(l => l.murid));
+          const belum = muridList.filter(m => m.status === 'Aktif' && !sudah.has(m.nama));
+          const notifs = [];
+          if (belum.length) notifs.push({ type:'warn', icon:'⏰', text:'Belum isi absensi ' + belum.slice(0,2).map(m=>m.nama).join(', ') + (belum.length>2?' ...':''), time:'Hari ini' });
+          if (!notifs.length) notifs.push({ type:'success', icon:'✅', text:'Semua absensi hari ini sudah diisi!', time:'Sekarang' });
+          return `<div class="card-header"><div class="card-title">Notifikasi</div>${belum.length > 0 ? '<span class="badge badge-red">' + belum.length + '</span>' : ''}</div>
+          <div class="card-body">${renderNotifList(notifs)}</div>`;
+        })()}
       </div>
     </div>
   `;
@@ -3253,7 +3382,6 @@ function renderJadwalMurid() {
         <div style="display:flex;flex-direction:column;gap:10px;font-size:13px;color:var(--ivory-dim);">
           <div style="display:flex;gap:10px;"><span style="color:var(--accent);font-size:16px;">📋</span><span>Pengajuan min. <strong style="color:var(--ivory);">24 jam sebelum</strong> jadwal yang akan di-reschedule</span></div>
           <div style="display:flex;gap:10px;"><span style="color:var(--gold);font-size:16px;">📅</span><span>Maks. <strong style="color:var(--ivory);">2× reschedule</strong> per bulan</span></div>
-          <div style="display:flex;gap:10px;"><span style="color:var(--blue);font-size:16px;">🔄</span><span>Make-up class dapat dilakukan dalam <strong style="color:var(--ivory);">60 hari</strong></span></div>
           <div style="display:flex;gap:10px;"><span style="color:var(--red);font-size:16px;">⚠</span><span>Tidak hadir tanpa kabar = sesi <strong style="color:var(--red);">hangus</strong></span></div>
         </div>
         <button class="btn-sm btn-gold" style="width:100%;margin-top:16px;padding:11px;" onclick="openModal('modal-reschedule')">Ajukan Reschedule Sekarang</button>
@@ -3376,6 +3504,122 @@ function renderRiwayatBayar() {
                 <td style="font-family:'Outfit',sans-serif;font-size:18px;font-weight:700;color:var(--gold);">${n}</td>
                 <td style="color:var(--ivory-dim);">${t}</td>
                 <td><span class="badge badge-${c}">${st}</span></td>
+              </tr>
+            `).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  `;
+}
+
+// ═══════════════════════════════════════════
+// DATA USER — AKUN ORTU
+// ═══════════════════════════════════════════
+function generateUsername(nama) {
+  return nama.toLowerCase().replace(/\s+/g, '.').replace(/[^a-z.]/g, '');
+}
+function generatePIN() {
+  return String(Math.floor(1000 + Math.random() * 9000));
+}
+
+async function generateOrtuAkun(muridNama) {
+  const existing = ortuAkunList.find(a => a.muridNama === muridNama);
+  if (existing) { showToast('Akun sudah ada untuk ' + muridNama, 'error'); return; }
+  const username = generateUsername(muridNama);
+  const pin      = generatePIN();
+  const { error } = await sb.from('ortu_akun').insert([{ murid_nama: muridNama, username, pin, status: 'Aktif' }]);
+  if (error) { showToast('Gagal buat akun: ' + error.message, 'error'); return; }
+  await loadOrtuAkun();
+  showCredModal(muridNama, username, pin, 'Akun Baru Dibuat ✅');
+  navigateTo('data-user');
+}
+
+async function generateSemuaAkun() {
+  const punyaAkun = new Set(ortuAkunList.map(a => a.muridNama));
+  const belum = muridList.filter(m => m.status === 'Aktif' && !punyaAkun.has(m.nama));
+  if (!belum.length) { showToast('Semua murid aktif sudah punya akun', 'error'); return; }
+  const rows = belum.map(m => ({ murid_nama: m.nama, username: generateUsername(m.nama), pin: generatePIN(), status: 'Aktif' }));
+  const { error } = await sb.from('ortu_akun').insert(rows);
+  if (error) { showToast('Gagal: ' + error.message, 'error'); return; }
+  await loadOrtuAkun();
+  showToast(belum.length + ' akun berhasil dibuat ✅', 'success');
+  navigateTo('data-user');
+}
+
+async function regeneratePIN(dbId, muridNama, username) {
+  const newPin = generatePIN();
+  const { error } = await sb.from('ortu_akun').update({ pin: newPin }).eq('id', dbId);
+  if (error) { showToast('Gagal regenerate PIN: ' + error.message, 'error'); return; }
+  await loadOrtuAkun();
+  showCredModal(muridNama, username, newPin, 'PIN Baru ✅');
+  navigateTo('data-user');
+}
+
+async function deleteOrtuAkun(dbId, muridNama) {
+  if (!confirm('Hapus akun ortu untuk ' + muridNama + '?')) return;
+  const { error } = await sb.from('ortu_akun').delete().eq('id', dbId);
+  if (error) { showToast('Gagal hapus: ' + error.message, 'error'); return; }
+  await loadOrtuAkun();
+  showToast('Akun ' + muridNama + ' dihapus', 'success');
+  navigateTo('data-user');
+}
+
+function showCredModal(muridNama, username, pin, title) {
+  document.getElementById('cred-title').textContent    = title || 'Kredensial Akun';
+  document.getElementById('cred-murid').textContent    = muridNama;
+  document.getElementById('cred-username').textContent = username;
+  document.getElementById('cred-pin').textContent      = pin;
+  openModal('modal-cred');
+}
+
+function renderDataUser() {
+  const punyaAkun = new Set(ortuAkunList.map(a => a.muridNama));
+  const belumAkun = muridList.filter(m => m.status === 'Aktif' && !punyaAkun.has(m.nama));
+  return `
+    <div class="section-header">
+      <div class="section-title">Akun Login Orang Tua</div>
+      <div style="display:flex;gap:8px;">
+        ${belumAkun.length > 0 ? `<button class="btn-sm btn-gold" onclick="generateSemuaAkun()">⚡ Generate Semua (${belumAkun.length})</button>` : ''}
+      </div>
+    </div>
+    ${belumAkun.length > 0 ? `
+    <div class="card" style="margin-bottom:20px;border-color:rgba(201,168,76,0.3);">
+      <div class="card-header" style="background:rgba(201,168,76,0.08);">
+        <div class="card-title" style="color:var(--gold);">⚠ Belum Punya Akun</div>
+      </div>
+      <div class="card-body">
+        ${belumAkun.map(m => `
+          <div style="display:flex;align-items:center;justify-content:space-between;padding:12px;background:var(--bg3);border-radius:10px;margin-bottom:8px;">
+            <div>
+              <div style="font-size:14px;font-weight:700;">${m.nama}</div>
+              <div style="font-size:12px;color:var(--ivory-dim);">${m.paket||'—'}</div>
+            </div>
+            <button class="btn-sm btn-gold" onclick="generateOrtuAkun('${m.nama.replace(/'/g,"\\'")}')">+ Generate Akun</button>
+          </div>
+        `).join('')}
+      </div>
+    </div>` : ''}
+    <div class="card">
+      <div class="card-header"><div class="card-title">Semua Akun Ortu (${ortuAkunList.length})</div></div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Nama Murid</th><th>Username</th><th>PIN</th><th>Status</th><th style="text-align:right;">Aksi</th></tr></thead>
+          <tbody>
+            ${ortuAkunList.length === 0 ? '<tr><td colspan="5" style="text-align:center;color:var(--ivory-dim);padding:30px;">Belum ada akun. Klik "Generate Semua" untuk membuat.</td></tr>' : ''}
+            ${ortuAkunList.map(a => `
+              <tr>
+                <td><strong>${a.muridNama}</strong></td>
+                <td style="font-family:monospace;font-size:13px;color:var(--accent);">${a.username}</td>
+                <td>
+                  <span style="font-family:monospace;font-size:18px;font-weight:800;letter-spacing:4px;color:var(--gold);">${a.pin}</span>
+                </td>
+                <td><span class="badge badge-${a.status==='Aktif'?'green':'red'}">${a.status}</span></td>
+                <td style="text-align:right;">
+                  <button class="btn-sm btn-outline" style="margin-right:6px;" onclick="showCredModal('${a.muridNama.replace(/'/g,"\\'")}','${a.username}','${a.pin}','Kredensial Akun')">👁 Lihat</button>
+                  <button class="btn-sm btn-ghost" style="margin-right:6px;" onclick="regeneratePIN('${a.dbId}','${a.muridNama.replace(/'/g,"\\'")}','${a.username}')">🔄 PIN Baru</button>
+                  <button class="btn-sm btn-ghost" style="color:var(--red);" onclick="deleteOrtuAkun('${a.dbId}','${a.muridNama.replace(/'/g,"\\'")}')">🗑</button>
+                </td>
               </tr>
             `).join('')}
           </tbody>

@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Pianotes — Platform Manajemen Les Piano</title>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Nunito:wght@400;500;600;700;800&family=Outfit:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
   :root {
     --bg: #081410;
@@ -795,6 +796,7 @@
   /* ─── SMOOTH ANIMATION ─── */
   .page { animation: fadeIn .3s ease; }
   @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+  @keyframes spin    { to { transform: rotate(360deg); } }
 
   /* ─── SEARCH ─── */
   .search-bar {
@@ -1367,6 +1369,85 @@
   </div>
 </div>
 
+<!-- ════════════ MODAL: EDIT MURID ════════════ -->
+<div class="modal-overlay" id="modal-edit-murid">
+  <div class="modal-box" style="max-width:560px;">
+    <button class="modal-close" onclick="closeModal('modal-edit-murid')">✕</button>
+    <div class="modal-title">Edit Data Murid</div>
+    <input type="hidden" id="em-dbid">
+    <div class="form-grid-2">
+      <div class="form-group"><label>Nama Lengkap</label><input type="text" id="em-nama" placeholder="Nama murid"></div>
+      <div class="form-group"><label>No. WA Orang Tua</label><input type="text" id="em-wa" placeholder="08xxxxxxxxxx"></div>
+      <div class="form-group"><label>Guru</label>
+        <select id="em-guru">
+          <option>Rizky Pratama</option><option>Nadia Kusuma</option>
+          <option>Citra Handayani</option><option>Farhan Alamsyah</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Level</label>
+        <select id="em-level">
+          <option>Grade 1</option><option>Grade 2</option><option>Grade 3</option>
+          <option>Grade 4</option><option>Grade 5</option><option>Grade 6</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Tipe Les</label>
+        <select id="em-tipe"><option>Home Visit</option><option>Studio</option><option>Online</option></select>
+      </div>
+      <div class="form-group"><label>Fee per Sesi (Rp)</label>
+        <input type="number" id="em-fee" placeholder="120000" step="5000">
+      </div>
+      <div class="form-group"><label>Hari</label>
+        <select id="em-hari">
+          <option>Senin</option><option>Selasa</option><option>Rabu</option>
+          <option>Kamis</option><option>Jumat</option><option>Sabtu</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Jam</label><input type="time" id="em-jam"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="em-status"><option>Aktif</option><option>Cuti</option><option>Berhenti</option></select>
+      </div>
+      <div class="form-group"><label>Sesi / Bulan</label>
+        <select id="em-sesi"><option>3</option><option>4</option><option>5</option></select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-sm btn-outline" style="flex:1;" onclick="closeModal('modal-edit-murid')">Batal</button>
+      <button class="btn-sm btn-gold" style="flex:1;padding:10px;" onclick="saveEditMurid()">Simpan Perubahan ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════════ MODAL: EDIT GURU ════════════ -->
+<div class="modal-overlay" id="modal-edit-guru">
+  <div class="modal-box" style="max-width:520px;">
+    <button class="modal-close" onclick="closeModal('modal-edit-guru')">✕</button>
+    <div class="modal-title">Edit Data Guru</div>
+    <input type="hidden" id="eg-dbid">
+    <div class="form-grid-2">
+      <div class="form-group"><label>Nama Lengkap</label><input type="text" id="eg-nama" placeholder="Nama guru"></div>
+      <div class="form-group"><label>Area Mengajar</label><input type="text" id="eg-area" placeholder="cth: Selatan, Barat"></div>
+      <div class="form-group"><label>Tipe Les</label>
+        <select id="eg-tipe"><option>Home Visit</option><option>Studio</option><option>Online</option><option>Studio, Online</option></select>
+      </div>
+      <div class="form-group"><label>Level Murid</label>
+        <select id="eg-level">
+          <option>Grade 1–2</option><option>Grade 1–3</option><option>Grade 1–5</option>
+          <option>Grade 2–4</option><option>Grade 3–6</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Total Sesi Bulan Ini</label><input type="number" id="eg-sesi" placeholder="0" min="0"></div>
+      <div class="form-group"><label>Estimasi Gaji (Rp)</label><input type="number" id="eg-gaji" placeholder="0" step="100000"></div>
+      <div class="form-group"><label>Status</label>
+        <select id="eg-status"><option>Aktif</option><option>Cuti</option><option>Nonaktif</option></select>
+      </div>
+    </div>
+    <div class="form-actions">
+      <button class="btn-sm btn-outline" style="flex:1;" onclick="closeModal('modal-edit-guru')">Batal</button>
+      <button class="btn-sm btn-gold" style="flex:1;padding:10px;" onclick="saveEditGuru()">Simpan Perubahan ✓</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════
 // STATE
@@ -1374,29 +1455,86 @@
 let currentRole = 'admin';
 let currentPage = '';
 
-// Demo data storage
-let muridList = [
-  {id:'PLN-001',nama:'Zara Amelia',guru:'Rizky Pratama',jadwal:'Senin 09:00',tipe:'Home Visit',level:'Grade 3',status:'Aktif',color:'#C9A84C',sesi:4,fee:120000,wa:'08123456789'},
-  {id:'PLN-002',nama:'Nathan Putra',guru:'Nadia Kusuma',jadwal:'Rabu 10:30',tipe:'Studio',level:'Grade 2',status:'Aktif',color:'#5C8AE0',sesi:3,fee:105000,wa:'08234567890'},
-  {id:'PLN-003',nama:'Keisha Ramadhani',guru:'Rizky Pratama',jadwal:'Kamis 13:00',tipe:'Online',level:'Grade 4',status:'Aktif',color:'#4CAF8A',sesi:4,fee:110000,wa:'08345678901'},
-  {id:'PLN-004',nama:'Rafa Adiputra',guru:'Citra Handayani',jadwal:'Selasa 15:00',tipe:'Studio',level:'Grade 1',status:'Cuti',color:'#E05C6A',sesi:4,fee:100000,wa:'08456789012'},
-  {id:'PLN-005',nama:'Bella Salsabila',guru:'Nadia Kusuma',jadwal:'Jumat 17:00',tipe:'Home Visit',level:'Grade 2',status:'Aktif',color:'#8A5CE0',sesi:4,fee:120000,wa:'08567890123'},
-];
+// ═══════════════════════════════════════════
+// SUPABASE CONFIG
+// ═══════════════════════════════════════════
+const SUPABASE_URL  = 'https://lbpvleicnlqhfbokpaeu.supabase.co';
+const SUPABASE_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImxicHZsZWljbmxxaGZib2twYWV1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA4MzA3MzYsImV4cCI6MjA5NjQwNjczNn0.9WpnukSd1oONVf0wtAYI8G58hW1WK78A2qgSXttD_84';
+const sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
 
-let guruList = [
-  {nama:'Rizky Pratama',area:'Selatan, Barat',tipe:'Home Visit',level:'Grade 1–5',murid:12,color:'#C9A84C',sesi:48,gajiEst:4800000,status:'Aktif'},
-  {nama:'Nadia Kusuma',area:'Utara, Timur',tipe:'Studio',level:'Grade 1–3',murid:9,color:'#5C8AE0',sesi:36,gajiEst:3600000,status:'Aktif'},
-  {nama:'Citra Handayani',area:'Selatan',tipe:'Studio, Online',level:'Grade 2–4',murid:8,color:'#4CAF8A',sesi:32,gajiEst:3200000,status:'Aktif'},
-  {nama:'Farhan Alamsyah',area:'Timur, Utara',tipe:'Home Visit',level:'Grade 1–2',murid:7,color:'#8A5CE0',sesi:28,gajiEst:2800000,status:'Aktif'},
-];
+// Local state (diisi dari Supabase)
+let muridList   = [];
+let guruList    = [];
+let invoiceList = [];
 
-let invoiceList = [
-  {id:'INV-2026-042',murid:'Zara Amelia',detail:'4 sesi × 60 mnt',nominal:480000,status:'Belum Bayar',statusColor:'red'},
-  {id:'INV-2026-041',murid:'Nathan Putra',detail:'3 sesi × 45 mnt',nominal:315000,status:'Menunggu Konfirmasi',statusColor:'gold'},
-  {id:'INV-2026-040',murid:'Keisha Ramadhani',detail:'4 sesi × 60 mnt',nominal:440000,status:'Sudah Bayar',statusColor:'green'},
-  {id:'INV-2026-039',murid:'Rafa Adiputra',detail:'4 sesi × 45 mnt',nominal:360000,status:'Sudah Bayar',statusColor:'green'},
-  {id:'INV-2026-038',murid:'Bella Salsabila',detail:'4 sesi × 60 mnt',nominal:480000,status:'Belum Bayar',statusColor:'red'},
-];
+// ─── LOADERS ───
+async function loadMurid() {
+  const { data, error } = await sb.from('murid').select('*').order('nama');
+  if (error) { showToast('Gagal load murid: ' + error.message, 'error'); return; }
+  const avatarColors = ['#C9A84C','#5C8AE0','#4CAF8A','#E05C6A','#8A5CE0','#E07C5C','#4DB87A','#5CE0A8'];
+  muridList = (data || []).map((m, i) => ({
+    dbId   : m.id,
+    id     : m.id_murid || ('PLN-' + String(i+1).padStart(3,'0')),
+    nama   : m.nama        || '',
+    guru   : m.guru        || m.nama_guru || '',
+    jadwal : m.jadwal      || '',
+    tipe   : m.tipe        || 'Studio',
+    level  : m.level       || 'Grade 1',
+    fee    : m.fee         || m.fee_per_sesi || 100000,
+    status : m.status      || 'Aktif',
+    wa     : m.wa          || m.wa_ortu || '',
+    color  : m.color       || avatarColors[i % avatarColors.length],
+    sesi   : m.sesi        || 4,
+  }));
+}
+
+async function loadGuru() {
+  const { data, error } = await sb.from('guru').select('*').order('nama');
+  if (error) { showToast('Gagal load guru: ' + error.message, 'error'); return; }
+  const avatarColors = ['#C9A84C','#5C8AE0','#4CAF8A','#8A5CE0'];
+  guruList = (data || []).map((g, i) => ({
+    dbId    : g.id,
+    nama    : g.nama       || '',
+    area    : g.area       || '',
+    tipe    : g.tipe       || 'Studio',
+    level   : g.level      || 'Grade 1–3',
+    murid   : g.murid_count || g.jumlah_murid || 0,
+    color   : g.color      || avatarColors[i % avatarColors.length],
+    sesi    : g.sesi       || g.total_sesi || 0,
+    gajiEst : g.gaji_est   || g.estimasi_gaji || 0,
+    status  : g.status     || 'Aktif',
+  }));
+}
+
+async function loadInvoice() {
+  const { data, error } = await sb.from('invoice').select('*').order('created_at', { ascending: false });
+  if (error) { showToast('Gagal load invoice: ' + error.message, 'error'); return; }
+  invoiceList = (data || []).map(inv => {
+    const st = inv.status || 'Belum Bayar';
+    return {
+      dbId       : inv.id,
+      id         : inv.nomor || inv.no_invoice || inv.id,
+      murid      : inv.murid || inv.nama_murid || '',
+      detail     : inv.detail || '',
+      nominal    : inv.nominal || 0,
+      status     : st,
+      statusColor: st === 'Sudah Bayar' ? 'green' : st === 'Menunggu Konfirmasi' ? 'gold' : 'red',
+    };
+  });
+}
+
+async function loadAllData() {
+  await Promise.all([loadMurid(), loadGuru(), loadInvoice()]);
+}
+
+// ─── REALTIME LISTENER ───
+function setupRealtime() {
+  sb.channel('pianotes-changes')
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'murid' },   () => loadMurid().then(() => { if(currentPage==='data-murid') navigateTo('data-murid'); }))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'guru' },    () => loadGuru().then(() => { if(currentPage==='data-guru') navigateTo('data-guru'); }))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'invoice' }, () => loadInvoice().then(() => { if(currentPage==='invoice'||currentPage==='invoice-ortu') navigateTo(currentPage); }))
+    .subscribe();
+}
 
 // ═══════════════════════════════════════════
 // MODAL & TOAST UTILITIES
@@ -1435,45 +1573,67 @@ function previewBukti(input) {
 }
 
 // ─── FORM SAVE HANDLERS ───
-function saveTambahMurid() {
+async function saveTambahMurid() {
   const nama = document.getElementById('m-nama').value.trim();
   if (!nama) { showToast('Nama murid wajib diisi!', 'error'); return; }
-  const newMurid = {
-    id: 'PLN-' + String(muridList.length + 1).padStart(3,'0'),
-    nama, guru: document.getElementById('m-guru').value,
-    jadwal: document.getElementById('m-hari').value + ' ' + document.getElementById('m-jam').value,
-    tipe: document.getElementById('m-tipe').value,
-    level: document.getElementById('m-level').value,
-    status: 'Aktif', color: '#' + Math.floor(Math.random()*16777215).toString(16).padStart(6,'0'),
-    sesi: 4, fee: parseInt(document.getElementById('m-fee').value)||120000,
-    wa: document.getElementById('m-wa').value,
+  const avatarColors = ['#C9A84C','#5C8AE0','#4CAF8A','#E05C6A','#8A5CE0','#E07C5C','#4DB87A','#5CE0A8'];
+  const payload = {
+    nama,
+    guru   : document.getElementById('m-guru').value,
+    jadwal : document.getElementById('m-hari').value + ' ' + document.getElementById('m-jam').value,
+    tipe   : document.getElementById('m-tipe').value,
+    level  : document.getElementById('m-level').value,
+    status : 'Aktif',
+    color  : avatarColors[Math.floor(Math.random()*avatarColors.length)],
+    sesi   : 4,
+    fee    : parseInt(document.getElementById('m-fee').value) || 120000,
+    wa     : document.getElementById('m-wa').value,
   };
-  muridList.push(newMurid);
+  const { error } = await sb.from('murid').insert([payload]);
+  if (error) { showToast('Gagal simpan murid: ' + error.message, 'error'); return; }
+  await loadMurid();
   closeModal('modal-tambah-murid');
   showToast('Murid ' + nama + ' berhasil ditambahkan!', 'success');
   navigateTo('data-murid');
 }
 
-function saveTambahGuru() {
+async function saveTambahGuru() {
   const nama = document.getElementById('g-nama').value.trim();
   if (!nama) { showToast('Nama guru wajib diisi!', 'error'); return; }
-  guruList.push({
-    nama, area: document.getElementById('g-area').value,
-    tipe: document.getElementById('g-tipe').value,
-    level: document.getElementById('g-level').value,
-    murid: 0, color: '#4DB87A', sesi: 0, gajiEst: 0, status: 'Aktif',
-  });
+  const payload = {
+    nama,
+    area        : document.getElementById('g-area').value,
+    tipe        : document.getElementById('g-tipe').value,
+    level       : document.getElementById('g-level').value,
+    murid_count : 0,
+    color       : '#4DB87A',
+    sesi        : 0,
+    gaji_est    : 0,
+    status      : 'Aktif',
+  };
+  const { error } = await sb.from('guru').insert([payload]);
+  if (error) { showToast('Gagal simpan guru: ' + error.message, 'error'); return; }
+  await loadGuru();
   closeModal('modal-tambah-guru');
   showToast('Guru ' + nama + ' berhasil ditambahkan!', 'success');
   navigateTo('data-guru');
 }
 
-function submitBuktiBayar() {
+// Track which invoice is being uploaded
+let uploadBuktiInvoiceId = null;
+
+function openUploadBukti(dbId) {
+  uploadBuktiInvoiceId = dbId || (invoiceList[0] && invoiceList[0].dbId) || null;
+  openModal('modal-upload-bukti');
+}
+
+async function submitBuktiBayar() {
   const file = document.getElementById('buktiFile');
   if (!file.files || !file.files[0]) { showToast('Upload foto bukti transfer dulu!', 'error'); return; }
-  // Update invoice status to "Menunggu Konfirmasi"
-  invoiceList[0].status = 'Menunggu Konfirmasi';
-  invoiceList[0].statusColor = 'gold';
+  if (!uploadBuktiInvoiceId) { showToast('Tidak ada invoice yang dipilih.', 'error'); return; }
+  const { error } = await sb.from('invoice').update({ status: 'Menunggu Konfirmasi' }).eq('id', uploadBuktiInvoiceId);
+  if (error) { showToast('Gagal kirim bukti: ' + error.message, 'error'); return; }
+  await loadInvoice();
   closeModal('modal-upload-bukti');
   showToast('Bukti bayar terkirim! Menunggu konfirmasi admin.', 'success');
   navigateTo('invoice-ortu');
@@ -1484,6 +1644,127 @@ function submitReschedule() {
   if (!tanggal) { showToast('Pilih tanggal pengganti dulu!', 'error'); return; }
   closeModal('modal-reschedule');
   showToast('Permintaan reschedule terkirim! Admin akan konfirmasi.', 'success');
+}
+
+// ─── EDIT & DELETE: MURID ───
+let editMuridIdx = null;
+function openEditMurid(i) {
+  editMuridIdx = i;
+  const m = muridList[i];
+  document.getElementById('em-dbid').value  = m.dbId || '';
+  document.getElementById('em-nama').value  = m.nama;
+  document.getElementById('em-wa').value    = m.wa || '';
+  document.getElementById('em-fee').value   = m.fee;
+  document.getElementById('em-jam').value   = (m.jadwal || '').split(' ')[1] || '';
+  document.getElementById('em-sesi').value  = String(m.sesi || 4);
+  // Set selects
+  ['em-guru','em-level','em-tipe','em-status','em-hari','em-sesi'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let val = '';
+    if (id==='em-guru')   val = m.guru;
+    if (id==='em-level')  val = m.level;
+    if (id==='em-tipe')   val = m.tipe;
+    if (id==='em-status') val = m.status;
+    if (id==='em-hari')   val = (m.jadwal||'').split(' ')[0] || 'Senin';
+    if (id==='em-sesi')   val = String(m.sesi || 4);
+    for (const opt of el.options) { if (opt.value === val || opt.text === val) { el.value = opt.value; break; } }
+  });
+  openModal('modal-edit-murid');
+}
+
+async function saveEditMurid() {
+  const nama = document.getElementById('em-nama').value.trim();
+  if (!nama) { showToast('Nama wajib diisi!', 'error'); return; }
+  const dbId = document.getElementById('em-dbid').value;
+  const payload = {
+    nama,
+    wa     : document.getElementById('em-wa').value,
+    guru   : document.getElementById('em-guru').value,
+    level  : document.getElementById('em-level').value,
+    tipe   : document.getElementById('em-tipe').value,
+    fee    : parseInt(document.getElementById('em-fee').value) || 100000,
+    jadwal : document.getElementById('em-hari').value + ' ' + document.getElementById('em-jam').value,
+    status : document.getElementById('em-status').value,
+    sesi   : parseInt(document.getElementById('em-sesi').value) || 4,
+  };
+  const { error } = await sb.from('murid').update(payload).eq('id', dbId);
+  if (error) { showToast('Gagal update: ' + error.message, 'error'); return; }
+  await loadMurid();
+  closeModal('modal-edit-murid');
+  showToast('Data ' + nama + ' berhasil diperbarui ✅', 'success');
+  navigateTo('data-murid');
+}
+
+async function deleteMurid(i) {
+  const m = muridList[i];
+  if (!confirm('Hapus murid "' + m.nama + '"? Tindakan ini tidak bisa dibatalkan.')) return;
+  const { error } = await sb.from('murid').delete().eq('id', m.dbId);
+  if (error) { showToast('Gagal hapus: ' + error.message, 'error'); return; }
+  await loadMurid();
+  showToast(m.nama + ' berhasil dihapus.', 'success');
+  navigateTo('data-murid');
+}
+
+// ─── EDIT & DELETE: GURU ───
+let editGuruIdx = null;
+function openEditGuru(i) {
+  editGuruIdx = i;
+  const g = guruList[i];
+  document.getElementById('eg-dbid').value  = g.dbId || '';
+  document.getElementById('eg-nama').value  = g.nama;
+  document.getElementById('eg-area').value  = g.area || '';
+  document.getElementById('eg-sesi').value  = g.sesi || 0;
+  document.getElementById('eg-gaji').value  = g.gajiEst || 0;
+  ['eg-tipe','eg-level','eg-status'].forEach(id => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    let val = id==='eg-tipe' ? g.tipe : id==='eg-level' ? g.level : g.status;
+    for (const opt of el.options) { if (opt.value === val || opt.text === val) { el.value = opt.value; break; } }
+  });
+  openModal('modal-edit-guru');
+}
+
+async function saveEditGuru() {
+  const nama = document.getElementById('eg-nama').value.trim();
+  if (!nama) { showToast('Nama wajib diisi!', 'error'); return; }
+  const dbId = document.getElementById('eg-dbid').value;
+  const payload = {
+    nama,
+    area        : document.getElementById('eg-area').value,
+    tipe        : document.getElementById('eg-tipe').value,
+    level       : document.getElementById('eg-level').value,
+    sesi        : parseInt(document.getElementById('eg-sesi').value) || 0,
+    gaji_est    : parseInt(document.getElementById('eg-gaji').value) || 0,
+    status      : document.getElementById('eg-status').value,
+  };
+  const { error } = await sb.from('guru').update(payload).eq('id', dbId);
+  if (error) { showToast('Gagal update: ' + error.message, 'error'); return; }
+  await loadGuru();
+  closeModal('modal-edit-guru');
+  showToast('Data ' + nama + ' berhasil diperbarui ✅', 'success');
+  navigateTo('data-guru');
+}
+
+async function deleteGuru(i) {
+  const g = guruList[i];
+  if (!confirm('Hapus guru "' + g.nama + '"? Tindakan ini tidak bisa dibatalkan.')) return;
+  const { error } = await sb.from('guru').delete().eq('id', g.dbId);
+  if (error) { showToast('Gagal hapus: ' + error.message, 'error'); return; }
+  await loadGuru();
+  showToast(g.nama + ' berhasil dihapus.', 'success');
+  navigateTo('data-guru');
+}
+
+// ─── DELETE: INVOICE ───
+async function deleteInvoice(i) {
+  const inv = invoiceList[i];
+  if (!confirm('Hapus invoice ' + inv.id + ' (' + inv.murid + ')? Tidak bisa dibatalkan.')) return;
+  const { error } = await sb.from('invoice').delete().eq('id', inv.dbId);
+  if (error) { showToast('Gagal hapus invoice: ' + error.message, 'error'); return; }
+  await loadInvoice();
+  showToast('Invoice berhasil dihapus.', 'success');
+  navigateTo('invoice');
 }
 
 let konfirmasiTarget = null;
@@ -1500,21 +1781,29 @@ function openKonfirmasi(idx) {
   openModal('modal-konfirmasi-bayar');
 }
 
-function confirmPayment() {
+async function confirmPayment() {
   if (konfirmasiTarget !== null) {
-    invoiceList[konfirmasiTarget].status = 'Sudah Bayar';
-    invoiceList[konfirmasiTarget].statusColor = 'green';
+    const inv = invoiceList[konfirmasiTarget];
+    if (inv && inv.dbId) {
+      const { error } = await sb.from('invoice').update({ status: 'Sudah Bayar' }).eq('id', inv.dbId);
+      if (error) { showToast('Gagal konfirmasi: ' + error.message, 'error'); return; }
+    }
   }
+  await loadInvoice();
   closeModal('modal-konfirmasi-bayar');
   showToast('Pembayaran dikonfirmasi lunas! ✅', 'success');
   navigateTo('invoice');
 }
 
-function rejectPayment() {
+async function rejectPayment() {
   if (konfirmasiTarget !== null) {
-    invoiceList[konfirmasiTarget].status = 'Belum Bayar';
-    invoiceList[konfirmasiTarget].statusColor = 'red';
+    const inv = invoiceList[konfirmasiTarget];
+    if (inv && inv.dbId) {
+      const { error } = await sb.from('invoice').update({ status: 'Belum Bayar' }).eq('id', inv.dbId);
+      if (error) { showToast('Gagal tolak pembayaran: ' + error.message, 'error'); return; }
+    }
   }
+  await loadInvoice();
   closeModal('modal-konfirmasi-bayar');
   showToast('Pembayaran ditolak. Orang tua akan diberitahu.', 'error');
   navigateTo('invoice');
@@ -1677,19 +1966,29 @@ const menus = {
 // ═══════════════════════════════════════════
 // INIT APP
 // ═══════════════════════════════════════════
-function initApp() {
-  const roleLabels = { admin: 'Administrator', guru: 'Guru Piano', ortu: 'Orang Tua' };
-  const roleNames = { admin: 'Admin Pianotes', guru: 'Rizky Pratama', ortu: 'Ibu Anita' };
+async function initApp() {
+  const roleLabels  = { admin: 'Administrator', guru: 'Guru Piano', ortu: 'Orang Tua' };
+  const roleNames   = { admin: 'Admin Pianotes', guru: 'Rizky Pratama', ortu: 'Ibu Anita' };
   const roleInitials = { admin: 'AP', guru: 'BS', ortu: 'IS' };
-  const roleColors = { admin: '#4DB87A', guru: '#5C8AE0', ortu: '#4CAF8A' };
+  const roleColors  = { admin: '#4DB87A', guru: '#5C8AE0', ortu: '#4CAF8A' };
 
-  document.getElementById('role-badge').textContent = roleLabels[currentRole];
-  document.getElementById('user-name').textContent = roleNames[currentRole];
-  document.getElementById('user-role-text').textContent = roleLabels[currentRole];
-  document.getElementById('user-avatar').textContent = roleInitials[currentRole];
+  document.getElementById('role-badge').textContent       = roleLabels[currentRole];
+  document.getElementById('user-name').textContent        = roleNames[currentRole];
+  document.getElementById('user-role-text').textContent   = roleLabels[currentRole];
+  document.getElementById('user-avatar').textContent      = roleInitials[currentRole];
   document.getElementById('user-avatar').style.background = `linear-gradient(135deg, ${roleColors[currentRole]}, ${roleColors[currentRole]}88)`;
 
   buildNav();
+
+  // Show loading state while fetching from Supabase
+  document.getElementById('content').innerHTML = `
+    <div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:60vh;gap:16px;">
+      <div style="width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <div style="color:var(--ivory-dim);font-size:14px;">Memuat data dari Supabase…</div>
+    </div>`;
+
+  await loadAllData();
+  setupRealtime();
   navigateTo('dashboard');
 }
 
@@ -1959,9 +2258,9 @@ function renderDataMurid() {
                 <td style="font-family:'Outfit',sans-serif;font-size:14px;font-weight:700;color:var(--gold);">Rp ${m.fee.toLocaleString('id-ID')}</td>
                 <td><span class="badge badge-${m.status==='Aktif'?'green':m.status==='Cuti'?'gold':'red'}">${m.status}</span></td>
                 <td>
-                  <div style="display:flex;gap:6px;">
-                    <button class="btn-sm btn-outline" onclick="showToast('Buka detail ${m.nama}','info')">Detail</button>
-                    <button class="btn-sm btn-ghost" onclick="showToast('Edit ${m.nama}','info')">Edit</button>
+                  <div style="display:flex;gap:6px;align-items:center;">
+                    <button class="btn-sm btn-ghost" onclick="openEditMurid(${i})">✏️ Edit</button>
+                    <button class="btn-sm btn-outline" style="color:var(--red);border-color:rgba(224,92,106,0.4);padding:5px 8px;" onclick="deleteMurid(${i})">🗑️</button>
                   </div>
                 </td>
               </tr>
@@ -1992,7 +2291,10 @@ function renderDataGuru() {
                 <div style="font-size:16px;font-weight:700;margin-bottom:2px;">${g.nama}</div>
                 <div style="font-size:12px;color:var(--ivory-dim);">${g.tipe}</div>
               </div>
-              <button class="btn-sm btn-outline" style="margin-left:auto;" onclick="showToast('Edit ${g.nama}','info')">Edit</button>
+              <div style="margin-left:auto;display:flex;gap:6px;">
+                <button class="btn-sm btn-ghost" onclick="openEditGuru(${i})">✏️ Edit</button>
+                <button class="btn-sm btn-outline" style="color:var(--red);border-color:rgba(224,92,106,0.4);padding:5px 8px;" onclick="deleteGuru(${i})">🗑️</button>
+              </div>
             </div>
             <div class="info-row"><span class="info-label">Area Mengajar</span><span class="info-value">${g.area}</span></div>
             <div class="info-row"><span class="info-label">Tipe Les</span><span class="info-value">${g.tipe}</span></div>
@@ -2217,6 +2519,7 @@ function renderInvoice() {
                     ${inv.status==='Menunggu Konfirmasi' ? `<button class="btn-sm btn-gold" onclick="openKonfirmasi(${idx})">✓ Konfirmasi</button>` : ''}
                     <button class="btn-sm btn-ghost" onclick="showToast('Download invoice...','info')">📥</button>
                     <button class="btn-sm btn-outline" onclick="showToast('Link WA disalin!','success')">🔗 WA</button>
+                    <button class="btn-sm btn-outline" style="color:var(--red);border-color:rgba(224,92,106,0.4);padding:5px 8px;" onclick="deleteInvoice(${idx})">🗑️</button>
                   </div>
                 </td>
               </tr>
@@ -2655,7 +2958,7 @@ function renderOrtuDashboard() {
           </div>
           <div style="display:flex;gap:8px;margin-top:14px;">
             <button class="btn-sm btn-outline" style="flex:1;" onclick="showToast('Download invoice...','info')">📥 Download</button>
-            <button class="btn-sm btn-gold" style="flex:1;" onclick="openModal('modal-upload-bukti')">📸 Upload Bukti Bayar</button>
+            <button class="btn-sm btn-gold" style="flex:1;" onclick="openUploadBukti(null)">📸 Upload Bukti Bayar</button>
           </div>
         </div>
       </div>
@@ -2815,7 +3118,7 @@ function renderInvoiceOrtu() {
         </div>
         <div style="display:flex;gap:8px;margin-top:16px;">
           <button class="btn-sm btn-outline" style="flex:1;" onclick="showToast('Download invoice...','info')">📥 Download</button>
-          <button class="btn-sm btn-gold" style="flex:1;padding:11px;" onclick="openModal('modal-upload-bukti')">📸 Upload Bukti Bayar</button>
+          <button class="btn-sm btn-gold" style="flex:1;padding:11px;" onclick="openUploadBukti('${inv.dbId}')">📸 Upload Bukti Bayar</button>
         </div>`}
       </div>
     </div>

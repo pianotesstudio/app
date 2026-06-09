@@ -1315,7 +1315,10 @@
       <div class="form-group"><label>Honor Home Visit (Rp/sesi)</label><input type="number" id="g-honor-hv" placeholder="130000"></div>
       <div class="form-group"><label>Honor Online (Rp/sesi)</label><input type="number" id="g-honor-ol" placeholder="120000"></div>
     </div>
-    <div class="form-group"><label>Area Mengajar</label><input type="text" id="g-area" placeholder="Cth: Jakarta Selatan, Jakarta Barat"></div>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Area Mengajar</label><input type="text" id="g-area" placeholder="Cth: Jakarta Selatan, Jakarta Barat"></div>
+      <div class="form-group"><label>Honor Studio (Rp/sesi)</label><input type="number" id="g-honor-studio" placeholder="150000" step="5000"></div>
+    </div>
     <div class="form-grid-2">
       <div class="form-group"><label>Level yang Diajarkan</label>
         <select id="g-level">
@@ -1328,6 +1331,21 @@
         </select>
       </div>
     </div>
+    <div class="form-section">Kualifikasi</div>
+    <div class="form-grid-2">
+      <div class="form-group"><label>Sertifikasi</label>
+        <select id="g-sertifikasi">
+          <option value="">— Pilih Sertifikasi —</option>
+          <option>S1 Musik</option>
+          <option>ABRSM Level 5</option>
+          <option>ABRSM Level 8</option>
+          <option>S2 Musik</option>
+          <option>&gt; ABRSM Level 8</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Tahun Mulai Mengajar</label><input type="number" id="g-tahun-ajar" placeholder="2018" min="1990" max="2030"></div>
+    </div>
+    <div class="form-group"><label>Pengalaman Mengajar</label><textarea id="g-pengalaman" placeholder="Cth: 5 tahun mengajar piano klasik dan pop, pengalaman mengajar di sekolah musik, dll."></textarea></div>
     <div class="form-group"><label>Catatan</label><textarea id="g-catatan" placeholder="Informasi tambahan tentang guru..."></textarea></div>
     <div class="form-actions">
       <button class="btn-sm btn-outline" style="flex:1;" onclick="closeModal('modal-tambah-guru')">Batal</button>
@@ -1531,12 +1549,23 @@
       <div class="form-group"><label>Nama Lengkap</label><input type="text" id="eg-nama" placeholder="Nama guru"></div>
       <div class="form-group"><label>Area Mengajar</label><input type="text" id="eg-area" placeholder="cth: Selatan, Barat"></div>
       <div class="form-group"><label>Tipe Les</label>
-        <select id="eg-tipe"><option>Home Visit</option><option>Studio</option><option>Online</option><option>Studio, Online</option></select>
+        <select id="eg-tipe"><option>Home Visit</option><option>Studio</option><option>Online</option><option>Studio, Online</option><option>Home Visit & Studio</option></select>
       </div>
       <div class="form-group"><label>Level Murid</label>
         <select id="eg-level">
           <option>Grade 1–2</option><option>Grade 1–3</option><option>Grade 1–5</option>
           <option>Grade 2–4</option><option>Grade 3–6</option>
+        </select>
+      </div>
+      <div class="form-group"><label>Honor Studio (Rp/sesi)</label><input type="number" id="eg-honor-studio" placeholder="150000" step="5000"></div>
+      <div class="form-group"><label>Sertifikasi</label>
+        <select id="eg-sertifikasi">
+          <option value="">— Pilih Sertifikasi —</option>
+          <option>S1 Musik</option>
+          <option>ABRSM Level 5</option>
+          <option>ABRSM Level 8</option>
+          <option>S2 Musik</option>
+          <option>&gt; ABRSM Level 8</option>
         </select>
       </div>
       <div class="form-group"><label>Total Sesi Bulan Ini</label><input type="number" id="eg-sesi" placeholder="0" min="0"></div>
@@ -1545,6 +1574,7 @@
         <select id="eg-status"><option>Aktif</option><option>Cuti</option><option>Nonaktif</option></select>
       </div>
     </div>
+    <div class="form-group"><label>Pengalaman Mengajar</label><textarea id="eg-pengalaman" placeholder="Cth: 5 tahun mengajar piano klasik dan pop, pengalaman di sekolah musik, dll."></textarea></div>
     <div class="form-actions">
       <button class="btn-sm btn-outline" style="flex:1;" onclick="closeModal('modal-edit-guru')">Batal</button>
       <button class="btn-sm btn-gold" style="flex:1;padding:10px;" onclick="saveEditGuru()">Simpan Perubahan ✓</button>
@@ -1690,6 +1720,13 @@ let loggedOrtuMurid = '';
 let loggedOrtuUser  = '';
 // Logged-in guru context (set on login)
 let loggedGuruNama  = '';
+let hariliburList   = [];   // loaded from Supabase 'libur' table
+// ─── Jadwal filter state ───
+let _jadwalViewMode    = 'weekly';
+let _jadwalGuruFilter  = '';
+let _jadwalMuridFilter = '';
+let _jadwalYear  = new Date().getFullYear();
+let _jadwalMonth = new Date().getMonth();
 
 // ─── LOADERS ───
 async function loadMurid() {
@@ -1773,8 +1810,13 @@ async function loadOrtuAkun() {
   }));
 }
 
+async function loadHariLibur() {
+  const { data, error } = await sb.from('libur').select('tanggal').order('tanggal');
+  if (!error) hariliburList = (data || []).map(r => r.tanggal);
+}
+
 async function loadAllData() {
-  await Promise.all([loadMurid(), loadGuru(), loadInvoice(), loadLaporan(), loadOrtuAkun()]);
+  await Promise.all([loadMurid(), loadGuru(), loadInvoice(), loadLaporan(), loadOrtuAkun(), loadHariLibur()]);
 }
 
 // ─── REALTIME LISTENER ───
@@ -1785,6 +1827,7 @@ function setupRealtime() {
     .on('postgres_changes', { event: '*', schema: 'public', table: 'invoice' }, () => loadInvoice().then(() => { if(currentPage==='invoice'||currentPage==='invoice-ortu') navigateTo(currentPage); }))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'laporan' },    () => loadLaporan().then(() => { if(currentPage==='input-absensi'||currentPage==='catatan-les') navigateTo(currentPage); }))
     .on('postgres_changes', { event: '*', schema: 'public', table: 'ortu_akun' }, () => loadOrtuAkun().then(() => { if(currentPage==='data-user') navigateTo('data-user'); }))
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'libur' },     () => loadHariLibur().then(() => { if(currentPage==='kalender') navigateTo('kalender'); }))
     .subscribe();
 }
 
@@ -1921,14 +1964,18 @@ async function saveTambahGuru() {
   if (!nama) { showToast('Nama guru wajib diisi!', 'error'); return; }
   const payload = {
     nama,
-    area        : document.getElementById('g-area').value,
-    tipe        : document.getElementById('g-tipe').value,
-    level       : document.getElementById('g-level').value,
-    murid_count : 0,
-    color       : '#4DB87A',
-    sesi        : 0,
-    gaji_est    : 0,
-    status      : 'Aktif',
+    area          : document.getElementById('g-area').value,
+    tipe          : document.getElementById('g-tipe').value,
+    level         : document.getElementById('g-level').value,
+    honor_studio  : parseInt(document.getElementById('g-honor-studio').value) || 0,
+    sertifikasi   : document.getElementById('g-sertifikasi').value,
+    tahun_ajar    : parseInt(document.getElementById('g-tahun-ajar').value) || null,
+    pengalaman    : document.getElementById('g-pengalaman').value.trim(),
+    murid_count   : 0,
+    color         : '#4DB87A',
+    sesi          : 0,
+    gaji_est      : 0,
+    status        : 'Aktif',
   };
   const { error } = await sb.from('guru').insert([payload]);
   if (error) { showToast('Gagal simpan guru: ' + error.message, 'error'); return; }
@@ -2030,15 +2077,17 @@ let editGuruIdx = null;
 function openEditGuru(i) {
   editGuruIdx = i;
   const g = guruList[i];
-  document.getElementById('eg-dbid').value  = g.dbId || '';
-  document.getElementById('eg-nama').value  = g.nama;
-  document.getElementById('eg-area').value  = g.area || '';
-  document.getElementById('eg-sesi').value  = g.sesi || 0;
-  document.getElementById('eg-gaji').value  = g.gajiEst || 0;
-  ['eg-tipe','eg-level','eg-status'].forEach(id => {
+  document.getElementById('eg-dbid').value         = g.dbId || '';
+  document.getElementById('eg-nama').value         = g.nama;
+  document.getElementById('eg-area').value         = g.area || '';
+  document.getElementById('eg-sesi').value         = g.sesi || 0;
+  document.getElementById('eg-gaji').value         = g.gajiEst || 0;
+  document.getElementById('eg-honor-studio').value = g.honorStudio || g.honor_studio || 0;
+  document.getElementById('eg-pengalaman').value   = g.pengalaman || '';
+  ['eg-tipe','eg-level','eg-status','eg-sertifikasi'].forEach(id => {
     const el = document.getElementById(id);
     if (!el) return;
-    let val = id==='eg-tipe' ? g.tipe : id==='eg-level' ? g.level : g.status;
+    let val = id==='eg-tipe' ? g.tipe : id==='eg-level' ? g.level : id==='eg-sertifikasi' ? (g.sertifikasi||'') : g.status;
     for (const opt of el.options) { if (opt.value === val || opt.text === val) { el.value = opt.value; break; } }
   });
   openModal('modal-edit-guru');
@@ -2050,12 +2099,15 @@ async function saveEditGuru() {
   const dbId = document.getElementById('eg-dbid').value;
   const payload = {
     nama,
-    area        : document.getElementById('eg-area').value,
-    tipe        : document.getElementById('eg-tipe').value,
-    level       : document.getElementById('eg-level').value,
-    sesi        : parseInt(document.getElementById('eg-sesi').value) || 0,
-    gaji_est    : parseInt(document.getElementById('eg-gaji').value) || 0,
-    status      : document.getElementById('eg-status').value,
+    area          : document.getElementById('eg-area').value,
+    tipe          : document.getElementById('eg-tipe').value,
+    level         : document.getElementById('eg-level').value,
+    honor_studio  : parseInt(document.getElementById('eg-honor-studio').value) || 0,
+    sertifikasi   : document.getElementById('eg-sertifikasi').value,
+    pengalaman    : document.getElementById('eg-pengalaman').value.trim(),
+    sesi          : parseInt(document.getElementById('eg-sesi').value) || 0,
+    gaji_est      : parseInt(document.getElementById('eg-gaji').value) || 0,
+    status        : document.getElementById('eg-status').value,
   };
   const { error } = await sb.from('guru').update(payload).eq('id', dbId);
   if (error) { showToast('Gagal update: ' + error.message, 'error'); return; }
@@ -2063,6 +2115,33 @@ async function saveEditGuru() {
   closeModal('modal-edit-guru');
   showToast('Data ' + nama + ' berhasil diperbarui ✅', 'success');
   navigateTo('data-guru');
+}
+
+
+async function saveHariLibur() {
+  const tgl = document.getElementById('libur-tanggal').value;
+  const ket = (document.getElementById('libur-keterangan') || {}).value || '';
+  if (!tgl) { showToast('Pilih tanggal dulu!', 'error'); return; }
+  if (hariliburList.includes(tgl)) {
+    showToast('Tanggal ini sudah ditandai sebagai libur.', 'info');
+    closeModal('modal-hari-libur');
+    return;
+  }
+  const { error } = await sb.from('libur').insert({ tanggal: tgl, keterangan: ket.trim() });
+  if (error) { showToast('Gagal simpan: ' + error.message, 'error'); return; }
+  await loadHariLibur();
+  showToast('Hari libur ' + tgl + ' berhasil ditambahkan! ✅', 'success');
+  closeModal('modal-hari-libur');
+  navigateTo('kalender');
+}
+
+async function deleteHariLibur(tgl) {
+  if (!confirm('Hapus hari libur ' + tgl + '?')) return;
+  const { error } = await sb.from('libur').delete().eq('tanggal', tgl);
+  if (error) { showToast('Gagal hapus: ' + error.message, 'error'); return; }
+  await loadHariLibur();
+  showToast('Hari libur dihapus.', 'success');
+  navigateTo('kalender');
 }
 
 async function deleteGuru(i) {
@@ -2679,8 +2758,11 @@ function renderDataGuru() {
             <div class="info-row"><span class="info-label">Area Mengajar</span><span class="info-value">${g.area}</span></div>
             <div class="info-row"><span class="info-label">Tipe Les</span><span class="info-value">${g.tipe}</span></div>
             <div class="info-row"><span class="info-label">Level Murid</span><span class="info-value">${g.level}</span></div>
+            ${g.sertifikasi ? `<div class="info-row"><span class="info-label">Sertifikasi</span><span class="info-value" style="color:var(--accent);font-weight:600;">🎓 ${g.sertifikasi}</span></div>` : ''}
+            ${(g.honorStudio || g.honor_studio) ? `<div class="info-row"><span class="info-label">Tarif Studio</span><span class="info-value">Rp ${(g.honorStudio||g.honor_studio||0).toLocaleString('id-ID')}/sesi</span></div>` : ''}
             <div class="info-row"><span class="info-label">Jumlah Murid</span><span class="info-value"><strong>${g.murid}</strong> murid aktif</span></div>
             <div class="info-row"><span class="info-label">Est. Gaji Juni</span><span class="info-value" style="font-family:'Outfit',sans-serif;font-weight:700;color:var(--gold);">Rp ${g.gajiEst.toLocaleString('id-ID')}</span></div>
+            ${g.pengalaman ? `<div style="margin-top:8px;padding:8px;background:var(--bg3);border-radius:8px;font-size:12px;color:var(--ivory-dim);line-height:1.5;">${g.pengalaman}</div>` : ''}
             <div style="margin-top:12px;display:flex;gap:8px;">
               <button class="btn-sm btn-ghost" style="flex:1;" onclick="navigateTo('jadwal')">Jadwal</button>
               <button class="btn-sm btn-ghost" style="flex:1;" onclick="navigateTo('absensi')">Absensi</button>
@@ -2698,26 +2780,113 @@ function renderDataGuru() {
 // ═══════════════════════════════════════════
 function renderJadwal() {
   const days = ['Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
-  // Build jadwal map from live muridList data
+  const bulanNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  const bulanLabel = bulanNames[_jadwalMonth] + ' ' + _jadwalYear;
+
+  // Build dropdown options
+  const guruOpts = [...new Set(muridList.filter(m=>m.guru).map(m=>m.guru))].sort();
+  const muridOpts = muridList.map(m=>m.nama).sort();
+
+  // Filter murid
+  let filtered = muridList.filter(m => m.jadwal && m.status === 'Aktif');
+  if (_jadwalGuruFilter)  filtered = filtered.filter(m => m.guru === _jadwalGuruFilter);
+  if (_jadwalMuridFilter) filtered = filtered.filter(m => m.nama === _jadwalMuridFilter);
+
+  const selStyle = 'padding:7px 10px;border-radius:8px;border:1.5px solid var(--border);background:var(--surface);color:var(--ivory);font-family:inherit;font-size:12px;cursor:pointer;';
+
+  const filterBar = `
+    <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:20px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,0.06);">
+      <div style="font-weight:700;font-size:13px;color:var(--ivory);margin-right:4px;">📅 Filter:</div>
+      <select style="${selStyle}" onchange="_jadwalGuruFilter=this.value;document.getElementById('content-area').innerHTML=renderJadwal();">
+        <option value="">👩‍🏫 Semua Guru</option>
+        ${guruOpts.map(g=>`<option value="${g}" ${_jadwalGuruFilter===g?'selected':''}>${g}</option>`).join('')}
+      </select>
+      <select style="${selStyle}" onchange="_jadwalMuridFilter=this.value;document.getElementById('content-area').innerHTML=renderJadwal();">
+        <option value="">🎓 Semua Murid</option>
+        ${muridOpts.map(m=>`<option value="${m}" ${_jadwalMuridFilter===m?'selected':''}>${m}</option>`).join('')}
+      </select>
+      <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
+        <button onclick="_jadwalMonth--;if(_jadwalMonth<0){_jadwalMonth=11;_jadwalYear--;}document.getElementById('content-area').innerHTML=renderJadwal();" style="${selStyle}padding:7px 12px;">‹</button>
+        <span style="font-size:13px;font-weight:700;min-width:100px;text-align:center;">${bulanLabel}</span>
+        <button onclick="_jadwalMonth++;if(_jadwalMonth>11){_jadwalMonth=0;_jadwalYear++;}document.getElementById('content-area').innerHTML=renderJadwal();" style="${selStyle}padding:7px 12px;">›</button>
+      </div>
+      <div style="display:flex;gap:4px;">
+        <button onclick="_jadwalViewMode='weekly';document.getElementById('content-area').innerHTML=renderJadwal();" style="padding:7px 14px;border-radius:8px;border:1.5px solid ${_jadwalViewMode==='weekly'?'var(--accent)':'var(--border)'};background:${_jadwalViewMode==='weekly'?'var(--accent)':'transparent'};color:${_jadwalViewMode==='weekly'?'#fff':'var(--ivory)'};font-size:12px;font-weight:700;cursor:pointer;">Mingguan</button>
+        <button onclick="_jadwalViewMode='monthly';document.getElementById('content-area').innerHTML=renderJadwal();" style="padding:7px 14px;border-radius:8px;border:1.5px solid ${_jadwalViewMode==='monthly'?'var(--accent)':'var(--border)'};background:${_jadwalViewMode==='monthly'?'var(--accent)':'transparent'};color:${_jadwalViewMode==='monthly'?'#fff':'var(--ivory)'};font-size:12px;font-weight:700;cursor:pointer;">Bulanan</button>
+      </div>
+      ${(_jadwalGuruFilter||_jadwalMuridFilter)?`<button onclick="_jadwalGuruFilter='';_jadwalMuridFilter='';document.getElementById('content-area').innerHTML=renderJadwal();" style="${selStyle}color:var(--red);border-color:rgba(224,92,106,0.4);">✕ Reset</button>`:''}
+    </div>`;
+
+  const totalSesi = filtered.length;
+  const header = `
+    <div class="section-header">
+      <div class="section-title">Jadwal Les — ${bulanLabel}</div>
+      <span style="font-size:13px;color:var(--ivory-dim);">${totalSesi} sesi/minggu${_jadwalGuruFilter?' · '+_jadwalGuruFilter:''}${_jadwalMuridFilter?' · '+_jadwalMuridFilter:''}</span>
+    </div>`;
+
+  if (_jadwalViewMode === 'monthly') {
+    // Monthly calendar view
+    const daysInMonth = new Date(_jadwalYear, _jadwalMonth + 1, 0).getDate();
+    const firstDow    = new Date(_jadwalYear, _jadwalMonth, 1).getDay();
+    const padStart    = (firstDow + 6) % 7; // Mon-first
+    const hariNames   = ['Minggu','Senin','Selasa','Rabu','Kamis','Jumat','Sabtu'];
+    const today       = new Date();
+
+    // Map each calendar date to sessions
+    const dayMap = {};
+    filtered.forEach(m => {
+      const hari = (m.jadwal.split(' ')[0]||'').trim();
+      const jam  = (m.jadwal.split(' ')[1]||'00:00');
+      for (let d = 1; d <= daysInMonth; d++) {
+        const dow = new Date(_jadwalYear, _jadwalMonth, d).getDay();
+        if (hariNames[dow] === hari) {
+          if (!dayMap[d]) dayMap[d] = [];
+          dayMap[d].push({ ...m, jam });
+        }
+      }
+    });
+
+    const calGrid = `
+      <div class="card">
+        <div class="card-header"><div class="card-title">Kalender Jadwal — ${bulanLabel}</div></div>
+        <div class="card-body" style="overflow-x:auto;">
+          <div style="display:grid;grid-template-columns:repeat(7,1fr);gap:4px;min-width:500px;">
+            ${['Sen','Sel','Rab','Kam','Jum','Sab','Min'].map(d=>`<div style="text-align:center;font-size:11px;font-weight:700;color:var(--ivory-dim);padding:6px 0;">${d}</div>`).join('')}
+            ${[...Array(padStart)].map(()=>'<div></div>').join('')}
+            ${[...Array(daysInMonth)].map((_,i)=>{
+              const d = i+1;
+              const dow = new Date(_jadwalYear, _jadwalMonth, d).getDay();
+              const isSun   = dow === 0;
+              const isToday = today.getFullYear()===_jadwalYear && today.getMonth()===_jadwalMonth && today.getDate()===d;
+              const sessions = dayMap[d] || [];
+              const bg = isToday ? 'var(--accent)' : sessions.length ? '#EDF7FF' : 'var(--bg3)';
+              const clr = isToday ? '#fff' : isSun ? 'var(--red)' : 'var(--ivory)';
+              return `
+                <div style="background:${bg};border-radius:8px;padding:6px 4px;min-height:64px;border:1px solid ${sessions.length&&!isToday?'#A6D3F2':'var(--border)'};">
+                  <div style="font-size:12px;font-weight:700;color:${clr};margin-bottom:3px;">${d}</div>
+                  ${sessions.slice(0,3).map(s=>`<div style="font-size:9px;background:${isToday?'rgba(255,255,255,0.25)':'rgba(77,184,122,0.15)'};border-radius:4px;padding:1px 3px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:${isToday?'#fff':'var(--ivory)'};">${s.jam} ${s.nama.split(' ')[0]}</div>`).join('')}
+                  ${sessions.length>3?`<div style="font-size:9px;color:var(--ivory-dim);">+${sessions.length-3} lagi</div>`:''}
+                </div>`;
+            }).join('')}
+          </div>
+        </div>
+      </div>`;
+    return header + filterBar + calGrid;
+  }
+
+  // ── Weekly view ──
   const byDay = {};
   days.forEach(d => byDay[d] = []);
-  muridList.forEach((m, idx) => {
-    if (!m.jadwal) return;
+  filtered.forEach((m, _) => {
     const parts = m.jadwal.trim().split(/\s+/);
-    const hari = parts[0];
-    const jam  = parts[1] || '00:00';
+    const hari  = parts[0];
+    const jam   = parts[1] || '00:00';
+    const idx   = muridList.indexOf(m);
     if (byDay[hari]) byDay[hari].push({ ...m, jam, idx });
   });
-  // Sort each day's sessions by time
   days.forEach(d => byDay[d].sort((a,b) => a.jam.localeCompare(b.jam)));
-  const totalSesi = muridList.filter(m => m.jadwal).length;
-  const now = new Date();
-  const bulan = now.toLocaleDateString('id-ID', { month: 'long', year: 'numeric' });
-  return `
-    <div class="section-header">
-      <div class="section-title">Jadwal Les — ${bulan}</div>
-      <span style="font-size:13px;color:var(--ivory-dim);">${totalSesi} sesi/minggu</span>
-    </div>
+
+  return header + filterBar + `
     <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">
       ${days.map(d => `
         <div class="card">
@@ -2727,7 +2896,7 @@ function renderJadwal() {
           </div>
           <div class="card-body">
             ${byDay[d].map(m => `
-              <div style="padding:10px;background:rgba(77,184,122,0.1);border-radius:8px;margin-bottom:8px;border-left:3px solid var(--accent);">
+              <div style="padding:10px;background:rgba(77,184,122,0.08);border-radius:8px;margin-bottom:8px;border-left:3px solid var(--accent);">
                 <div style="display:flex;justify-content:space-between;align-items:flex-start;">
                   <div style="flex:1;min-width:0;">
                     <div style="font-size:12px;color:var(--accent);font-weight:700;">${m.jam}</div>
@@ -2832,19 +3001,32 @@ function renderAbsensiAdmin() {
           </div>
           <div class="card-body">
             ${rows.length === 0 ? '<div style="color:var(--ivory-dim);font-size:13px;text-align:center;padding:12px;">Belum ada catatan absensi</div>' : `
-            <div class="absen-grid">
-              ${rows.map(l => {
-                const icon = iconMap[l.status] || '❓';
-                const cls  = clsMap[icon] || 'absen-kosong';
-                return `<div class="absen-cell ${cls}" title="${l.tanggal} — ${l.status}">${icon}</div>`;
-              }).join('')}
+            <div style="display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap;">
+              <span style="font-size:12px;background:rgba(77,184,122,0.12);color:var(--green);padding:3px 8px;border-radius:20px;">✅ ${hadir} Hadir</span>
+              <span style="font-size:12px;background:rgba(224,92,106,0.12);color:var(--red);padding:3px 8px;border-radius:20px;">⛔ ${alpha} Alpha</span>
+              <span style="font-size:12px;background:rgba(92,138,224,0.12);color:var(--blue);padding:3px 8px;border-radius:20px;">🔄 ${reschd} Reschedule</span>
             </div>
-            <div style="display:flex;gap:12px;margin-top:14px;font-size:12px;flex-wrap:wrap;">
-              <span>✅ Hadir: ${hadir}</span>
-              <span>⛔ Alpha: ${alpha}</span>
-              <span>🔄 Reschedule: ${reschd}</span>
-              <span style="color:var(--ivory-dim);">${rows.length} sesi tercatat</span>
-            </div>`}
+            <div style="max-height:200px;overflow-y:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:12px;">
+                <thead><tr style="background:var(--bg3);">
+                  <th style="padding:6px 8px;text-align:left;font-weight:700;border-radius:6px 0 0 6px;">Tanggal</th>
+                  <th style="padding:6px 8px;text-align:center;">Status</th>
+                  <th style="padding:6px 8px;text-align:left;border-radius:0 6px 6px 0;">Catatan</th>
+                </tr></thead>
+                <tbody>
+                  ${rows.map((l,ri) => {
+                    const icon = iconMap[l.status] || '❓';
+                    const tgl = l.tanggal ? new Date(l.tanggal).toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'}) : '—';
+                    return `<tr style="border-bottom:1px solid var(--border);background:${ri%2===0?'transparent':'var(--bg3)'};">
+                      <td style="padding:6px 8px;font-weight:600;">${tgl}</td>
+                      <td style="padding:6px 8px;text-align:center;">${icon} <span style="font-size:11px;color:var(--ivory-dim);">${l.status}</span></td>
+                      <td style="padding:6px 8px;color:var(--ivory-dim);font-size:11px;">${l.catatan||'—'}</td>
+                    </tr>`;
+                  }).join('')}
+                </tbody>
+              </table>
+            </div>
+            <div style="font-size:11px;color:var(--ivory-dim);margin-top:8px;">${rows.length} sesi tercatat</div>`}
           </div>
         </div>`;
       }).join('')}
@@ -2884,10 +3066,21 @@ function renderKalender() {
     if (new Date(year, month, d).getDay() === 0) sundays.push(d);
   }
 
+  // Load hari libur dari Supabase (sudah di-cache di hariliburList)
+  const harilibur = hariliburList;
+  const liburSet = new Set(harilibur);
+
   return `
     <div class="grid-2">
       <div class="card">
-        <div class="card-header"><div class="card-title">Kalender ${bulanLabel}</div></div>
+        <div class="card-header">
+          <div class="card-title">Kalender ${bulanLabel}</div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <button onclick="_kalYear=${year};_kalMonth=${month}-1;if(_kalMonth<0){_kalMonth=11;_kalYear--;}navigateTo('kalender');" class="btn-sm btn-outline" style="padding:4px 10px;">‹</button>
+            <button onclick="_kalYear=${year};_kalMonth=${month}+1;if(_kalMonth>11){_kalMonth=0;_kalYear++;}navigateTo('kalender');" class="btn-sm btn-outline" style="padding:4px 10px;">›</button>
+            <button onclick="openModal('modal-hari-libur')" class="btn-sm btn-gold" style="font-size:11px;">+ Hari Libur</button>
+          </div>
+        </div>
         <div class="card-body">
           <div class="mini-cal">
             <div class="cal-days-header">
@@ -2897,30 +3090,34 @@ function renderKalender() {
               ${[...Array(padStart)].map(() => `<div class="cal-day" style="opacity:0;"></div>`).join('')}
               ${[...Array(daysInMonth)].map((_,i) => {
                 const d = i+1;
-                const isMinggu = sundays.includes(d);
-                const isEvent  = daysWithLessons.has(d);
-                const isToday  = d === todayD;
+                const dateStr = year + '-' + String(month+1).padStart(2,'0') + '-' + String(d).padStart(2,'0');
+                const isMinggu  = sundays.includes(d);
+                const isEvent   = daysWithLessons.has(d);
+                const isToday   = d === todayD;
+                const isLibur   = liburSet.has(dateStr);
                 let cls = 'cal-day';
                 if (isToday) cls += ' today';
+                else if (isLibur) cls += ' libur';
                 else if (isMinggu) cls += ' libur';
-                if (isEvent && !isToday) cls += ' has-event';
-                return `<div class="${cls}">${d}</div>`;
+                if (isEvent && !isToday && !isLibur && !isMinggu) cls += ' has-event';
+                const tooltip = isLibur ? 'Hari Libur — klik hapus' : '';
+                return `<div class="${cls}" title="${tooltip}" ${isLibur?`onclick="deleteHariLibur('${dateStr}')"`:''} style="${isLibur?'cursor:pointer;':''}">${d}${isLibur?'<br><span style=\'font-size:7px;\'>🏖️</span>':''}</div>`;
               }).join('')}
             </div>
           </div>
         </div>
       </div>
       <div class="card">
-        <div class="card-header"><div class="card-title">Keterangan Kalender</div></div>
+        <div class="card-header"><div class="card-title">Keterangan & Hari Libur</div></div>
         <div class="card-body">
           <div style="display:flex;flex-direction:column;gap:10px;margin-bottom:16px;">
             ${[
               ['#4DB87A','Hari ini',now.toLocaleDateString('id-ID',{day:'numeric',month:'short',year:'numeric'})],
-              ['rgba(255,255,255,0.3)','Hari Minggu',sundays.slice(0,4).map(d=>d+' '+bulanLabel.split(' ')[0]).join(', ')],
-              ['#5C8AE0','Ada sesi les','Hari dengan jadwal murid aktif'],
+              ['rgba(224,92,106,0.5)','Hari Minggu / Libur','Klik + Hari Libur untuk tambah'],
+              ['#A6D3F2','Ada sesi les','Hari dengan jadwal murid aktif'],
             ].map(([c,l,d]) => `
               <div style="display:flex;align-items:center;gap:12px;padding:10px;background:var(--bg3);border-radius:8px;">
-                <div style="width:28px;height:28px;border-radius:6px;background:${c};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:var(--bg);">1</div>
+                <div style="width:28px;height:28px;border-radius:6px;background:${c};flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:white;">1</div>
                 <div>
                   <div style="font-size:13px;font-weight:700;">${l}</div>
                   <div style="font-size:12px;color:var(--ivory-dim);">${d}</div>
@@ -2928,7 +3125,18 @@ function renderKalender() {
               </div>
             `).join('')}
           </div>
-          <div style="font-size:13px;color:var(--ivory-dim);margin-top:8px;">${daysWithLessons.size} hari ada sesi les bulan ini</div>
+          ${harilibur.length > 0 ? `
+          <div style="font-size:13px;font-weight:700;margin-bottom:10px;">🏖️ Hari Libur Tercatat (${harilibur.length})</div>
+          <div style="display:flex;flex-direction:column;gap:6px;max-height:160px;overflow-y:auto;">
+            ${harilibur.sort().map(tgl => {
+              const d = new Date(tgl);
+              const label = d.toLocaleDateString('id-ID',{weekday:'short',day:'numeric',month:'short',year:'numeric'});
+              return `<div style="display:flex;align-items:center;justify-content:space-between;padding:7px 10px;background:rgba(224,92,106,0.08);border-radius:8px;border-left:3px solid var(--red);">
+                <span style="font-size:12px;">🏖️ ${label}</span>
+                <button onclick="deleteHariLibur('${tgl}')" style="border:none;background:transparent;color:var(--red);cursor:pointer;font-size:14px;">✕</button>
+              </div>`;
+            }).join('')}
+          </div>` : `<div style="font-size:13px;color:var(--ivory-dim);">${daysWithLessons.size} hari ada sesi les. Belum ada hari libur tercatat.</div>`}
         </div>
       </div>
     </div>
@@ -3971,5 +4179,27 @@ function renderDataUser() {
   `;
 }
 </script>
+
+<!-- ════════════ MODAL: HARI LIBUR ════════════ -->
+<div class="modal-overlay" id="modal-hari-libur">
+  <div class="modal-box" style="max-width:420px;">
+    <button class="modal-close" onclick="closeModal('modal-hari-libur')">✕</button>
+    <div class="modal-title">🏖️ Tambah Hari Libur</div>
+    <div style="font-size:13px;color:var(--ivory-dim);margin-bottom:16px;">Tandai tanggal sebagai hari libur (tidak ada sesi les). Tersimpan di perangkat ini.</div>
+    <div class="form-group">
+      <label>Tanggal Libur</label>
+      <input type="date" id="libur-tanggal" style="width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg3);color:var(--ivory);font-family:inherit;font-size:14px;">
+    </div>
+    <div class="form-group">
+      <label>Keterangan (opsional)</label>
+      <input type="text" id="libur-ket" placeholder="Cth: Lebaran, Libur Nasional, dll." style="width:100%;padding:10px 14px;border-radius:10px;border:1.5px solid var(--border);background:var(--bg3);color:var(--ivory);font-family:inherit;font-size:14px;">
+    </div>
+    <div class="form-actions">
+      <button class="btn-sm btn-outline" style="flex:1;" onclick="closeModal('modal-hari-libur')">Batal</button>
+      <button class="btn-sm btn-gold" style="flex:1;padding:10px;" onclick="saveHariLibur()">Simpan Hari Libur ✓</button>
+    </div>
+  </div>
+</div>
+
 </body>
 </html>

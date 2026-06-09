@@ -2797,31 +2797,34 @@ function renderJadwal() {
   const filterBar = `
     <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:20px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,0.06);">
       <div style="font-weight:700;font-size:13px;color:var(--ivory);margin-right:4px;">📅 Filter:</div>
-      <select style="${selStyle}" onchange="_jadwalGuruFilter=this.value;document.getElementById('content-area').innerHTML=renderJadwal();">
+      <select style="${selStyle}" onchange="_jadwalGuruFilter=this.value;navigateTo('jadwal');">
         <option value="">👩‍🏫 Semua Guru</option>
         ${guruOpts.map(g=>`<option value="${g}" ${_jadwalGuruFilter===g?'selected':''}>${g}</option>`).join('')}
       </select>
-      <select style="${selStyle}" onchange="_jadwalMuridFilter=this.value;document.getElementById('content-area').innerHTML=renderJadwal();">
+      <select style="${selStyle}" onchange="_jadwalMuridFilter=this.value;navigateTo('jadwal');">
         <option value="">🎓 Semua Murid</option>
         ${muridOpts.map(m=>`<option value="${m}" ${_jadwalMuridFilter===m?'selected':''}>${m}</option>`).join('')}
       </select>
       <div style="margin-left:auto;display:flex;gap:6px;align-items:center;">
-        <button onclick="_jadwalMonth--;if(_jadwalMonth<0){_jadwalMonth=11;_jadwalYear--;}document.getElementById('content-area').innerHTML=renderJadwal();" style="${selStyle}padding:7px 12px;">‹</button>
+        <button onclick="_jadwalMonth--;if(_jadwalMonth<0){_jadwalMonth=11;_jadwalYear--;}navigateTo('jadwal');" style="${selStyle}padding:7px 12px;">‹</button>
         <span style="font-size:13px;font-weight:700;min-width:100px;text-align:center;">${bulanLabel}</span>
-        <button onclick="_jadwalMonth++;if(_jadwalMonth>11){_jadwalMonth=0;_jadwalYear++;}document.getElementById('content-area').innerHTML=renderJadwal();" style="${selStyle}padding:7px 12px;">›</button>
+        <button onclick="_jadwalMonth++;if(_jadwalMonth>11){_jadwalMonth=0;_jadwalYear++;}navigateTo('jadwal');" style="${selStyle}padding:7px 12px;">›</button>
       </div>
       <div style="display:flex;gap:4px;">
-        <button onclick="_jadwalViewMode='weekly';document.getElementById('content-area').innerHTML=renderJadwal();" style="padding:7px 14px;border-radius:8px;border:1.5px solid ${_jadwalViewMode==='weekly'?'var(--accent)':'var(--border)'};background:${_jadwalViewMode==='weekly'?'var(--accent)':'transparent'};color:${_jadwalViewMode==='weekly'?'#fff':'var(--ivory)'};font-size:12px;font-weight:700;cursor:pointer;">Mingguan</button>
-        <button onclick="_jadwalViewMode='monthly';document.getElementById('content-area').innerHTML=renderJadwal();" style="padding:7px 14px;border-radius:8px;border:1.5px solid ${_jadwalViewMode==='monthly'?'var(--accent)':'var(--border)'};background:${_jadwalViewMode==='monthly'?'var(--accent)':'transparent'};color:${_jadwalViewMode==='monthly'?'#fff':'var(--ivory)'};font-size:12px;font-weight:700;cursor:pointer;">Bulanan</button>
+        <button onclick="_jadwalViewMode='weekly';navigateTo('jadwal');" style="padding:7px 14px;border-radius:8px;border:1.5px solid ${_jadwalViewMode==='weekly'?'var(--accent)':'var(--border)'};background:${_jadwalViewMode==='weekly'?'var(--accent)':'transparent'};color:${_jadwalViewMode==='weekly'?'#fff':'var(--ivory)'};font-size:12px;font-weight:700;cursor:pointer;">Mingguan</button>
+        <button onclick="_jadwalViewMode='monthly';navigateTo('jadwal');" style="padding:7px 14px;border-radius:8px;border:1.5px solid ${_jadwalViewMode==='monthly'?'var(--accent)':'var(--border)'};background:${_jadwalViewMode==='monthly'?'var(--accent)':'transparent'};color:${_jadwalViewMode==='monthly'?'#fff':'var(--ivory)'};font-size:12px;font-weight:700;cursor:pointer;">Bulanan</button>
       </div>
-      ${(_jadwalGuruFilter||_jadwalMuridFilter)?`<button onclick="_jadwalGuruFilter='';_jadwalMuridFilter='';document.getElementById('content-area').innerHTML=renderJadwal();" style="${selStyle}color:var(--red);border-color:rgba(224,92,106,0.4);">✕ Reset</button>`:''}
+      ${(_jadwalGuruFilter||_jadwalMuridFilter)?`<button onclick="_jadwalGuruFilter='';_jadwalMuridFilter='';navigateTo('jadwal');" style="${selStyle}color:var(--red);border-color:rgba(224,92,106,0.4);">✕ Reset</button>`:''}
     </div>`;
 
   const totalSesi = filtered.length;
   const header = `
     <div class="section-header">
       <div class="section-title">Jadwal Les — ${bulanLabel}</div>
-      <span style="font-size:13px;color:var(--ivory-dim);">${totalSesi} sesi/minggu${_jadwalGuruFilter?' · '+_jadwalGuruFilter:''}${_jadwalMuridFilter?' · '+_jadwalMuridFilter:''}</span>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <span style="font-size:13px;color:var(--ivory-dim);">${totalSesi} sesi/minggu${_jadwalGuruFilter?' · '+_jadwalGuruFilter:''}${_jadwalMuridFilter?' · '+_jadwalMuridFilter:''}</span>
+        <button class="btn-primary btn-sm" onclick="openTambahJadwal()" style="font-size:12px;">+ Tambah Jadwal</button>
+      </div>
     </div>`;
 
   if (_jadwalViewMode === 'monthly') {
@@ -2913,6 +2916,34 @@ function renderJadwal() {
       `).join('')}
     </div>
   `;
+}
+
+// ─── TAMBAH JADWAL ───
+function openTambahJadwal() {
+  // Reset form
+  const ms = document.getElementById('tj-murid');
+  if (ms) {
+    ms.innerHTML = '<option value="">— Pilih Murid —</option>' +
+      muridList.filter(m=>m.status==='Aktif').map(m=>`<option value="${m.dbId}">${m.nama}</option>`).join('');
+  }
+  if (document.getElementById('tj-hari'))  document.getElementById('tj-hari').value  = 'Senin';
+  if (document.getElementById('tj-jam'))   document.getElementById('tj-jam').value   = '09:00';
+  openModal('modal-tambah-jadwal');
+}
+
+async function saveTambahJadwal() {
+  const dbId = document.getElementById('tj-murid').value;
+  const hari = document.getElementById('tj-hari').value;
+  const jam  = document.getElementById('tj-jam').value;
+  if (!dbId) { showToast('Pilih murid dulu!', 'error'); return; }
+  if (!jam)  { showToast('Isi jam dulu!', 'error'); return; }
+  const jadwal = hari + ' ' + jam;
+  const { error } = await sb.from('murid').update({ jadwal }).eq('id', dbId);
+  if (error) { showToast('Gagal simpan: ' + error.message, 'error'); return; }
+  await loadMurid();
+  showToast('Jadwal berhasil disimpan ✅', 'success');
+  closeModal('modal-tambah-jadwal');
+  navigateTo('jadwal');
 }
 
 // ─── EDIT JADWAL ───
@@ -4197,6 +4228,41 @@ function renderDataUser() {
     <div class="form-actions">
       <button class="btn-sm btn-outline" style="flex:1;" onclick="closeModal('modal-hari-libur')">Batal</button>
       <button class="btn-sm btn-gold" style="flex:1;padding:10px;" onclick="saveHariLibur()">Simpan Hari Libur ✓</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ MODAL TAMBAH JADWAL ═══ -->
+<div id="modal-tambah-jadwal" class="modal-overlay" onclick="if(event.target===this)closeModal('modal-tambah-jadwal')">
+  <div class="modal-box">
+    <div class="modal-header">
+      <div class="modal-title">+ Tambah Jadwal</div>
+      <button class="modal-close" onclick="closeModal('modal-tambah-jadwal')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div class="form-group">
+        <label class="form-label">Murid</label>
+        <select id="tj-murid" class="form-control">
+          <option value="">— Pilih Murid —</option>
+        </select>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Hari</label>
+          <select id="tj-hari" class="form-control">
+            <option>Senin</option><option>Selasa</option><option>Rabu</option>
+            <option>Kamis</option><option>Jumat</option><option>Sabtu</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Jam</label>
+          <input type="time" id="tj-jam" class="form-control" value="09:00">
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-tambah-jadwal')">Batal</button>
+      <button class="btn-primary" onclick="saveTambahJadwal()">💾 Simpan Jadwal</button>
     </div>
   </div>
 </div>

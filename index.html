@@ -1456,37 +1456,83 @@
 </div>
 
 <!-- ════════════ MODAL: GENERATE INVOICE ════════════ -->
-<div class="modal-overlay" id="modal-gen-invoice">
-  <div class="modal-box" style="max-width:560px;">
-    <button class="modal-close" onclick="closeModal('modal-gen-invoice')">✕</button>
-    <div class="modal-title">Generate Invoice Bulanan</div>
-    <div class="form-grid-2">
-      <div class="form-group"><label>Bulan</label>
-        <select id="inv-bulan">
-          <option value="6">Juni 2026</option><option value="7">Juli 2026</option>
-        </select>
+<div class="modal-overlay" id="modal-gen-invoice" onclick="if(event.target===this)closeModal('modal-gen-invoice')">
+  <div class="modal-box" style="max-width:600px;">
+    <div class="modal-header">
+      <div class="modal-title">🧾 Generate Invoice</div>
+      <button class="modal-close" onclick="closeModal('modal-gen-invoice')">✕</button>
+    </div>
+    <div class="modal-body">
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Murid</label>
+          <select id="inv-murid" class="form-control" onchange="onInvMuridChange()">
+            <option value="">— Pilih Murid —</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Bulan Tagihan</label>
+          <select id="inv-bulan" class="form-control">
+          </select>
+        </div>
       </div>
-      <div class="form-group"><label>Murid</label>
-        <select id="inv-murid">
-          <option>Semua Murid Aktif</option><option>Zara Amelia</option>
-          <option>Nathan Putra</option><option>Keisha Ramadhani</option>
-        </select>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+        <div class="form-group">
+          <label class="form-label">Jumlah Sesi</label>
+          <select id="inv-sesi" class="form-control" onchange="onInvSesiChange()">
+            <option value="3">3 sesi</option>
+            <option value="4" selected>4 sesi</option>
+            <option value="5">5 sesi</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Durasi per Sesi</label>
+          <select id="inv-durasi" class="form-control">
+            <option value="30">30 menit</option>
+            <option value="45">45 menit</option>
+            <option value="60" selected>60 menit</option>
+            <option value="90">90 menit</option>
+          </select>
+        </div>
+      </div>
+      <div style="background:var(--bg3);border-radius:10px;padding:14px;display:flex;flex-direction:column;gap:10px;">
+        <div style="font-size:12px;font-weight:700;color:var(--ivory-dim);text-transform:uppercase;letter-spacing:.5px;">Rincian Tagihan</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Biaya Les (Rp)</label>
+            <input type="number" id="inv-biaya-les" class="form-control" placeholder="0" step="5000" oninput="updateInvTotal()">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Biaya Buku (Rp)</label>
+            <input type="number" id="inv-biaya-buku" class="form-control" value="0" step="5000" oninput="updateInvTotal()">
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+          <div class="form-group" style="margin:0;">
+            <label class="form-label">Diskon (Rp)</label>
+            <input type="number" id="inv-diskon" class="form-control" value="0" step="5000" oninput="updateInvTotal()">
+          </div>
+          <div class="form-group" style="margin:0;">
+            <label class="form-label" style="display:flex;align-items:center;gap:8px;">
+              <input type="checkbox" id="inv-dp-check" onchange="toggleInvDP()" style="width:16px;height:16px;">
+              DP Bulan Pertama (Rp)
+            </label>
+            <input type="number" id="inv-dp" class="form-control" value="0" step="5000" disabled oninput="updateInvTotal()">
+          </div>
+        </div>
+        <div style="border-top:1px solid var(--border);padding-top:10px;display:flex;justify-content:space-between;align-items:center;">
+          <span style="font-size:13px;font-weight:700;">TOTAL TAGIHAN</span>
+          <span id="inv-total-display" style="font-size:20px;font-weight:700;font-family:'Outfit',sans-serif;color:var(--gold);">Rp 0</span>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:12px;">
+        <label class="form-label">Catatan (opsional)</label>
+        <input type="text" id="inv-catatan" class="form-control" placeholder="cth: Termasuk buku RCM Grade 3">
       </div>
     </div>
-    <div class="form-group"><label>Logika Billing</label>
-      <select id="inv-logic">
-        <option value="4">Normal — 4 sesi/bulan</option>
-        <option value="3">Ada Tanggal Merah — 3 sesi/bulan</option>
-        <option value="5">5 Minggu — tetap 4 sesi</option>
-      </select>
-    </div>
-    <div id="inv-preview" style="background:var(--bg3);border-radius:10px;padding:16px;margin-top:8px;font-size:13px;display:none;">
-      <!-- preview rows -->
-    </div>
-    <div class="form-actions">
-      <button class="btn-sm btn-outline" onclick="previewInvoice()">👁 Preview</button>
-      <button class="btn-sm btn-outline" style="flex:1;" onclick="closeModal('modal-gen-invoice')">Batal</button>
-      <button class="btn-sm btn-gold" style="flex:1;padding:10px;" onclick="generateInvoice()">Generate ✓</button>
+    <div class="modal-footer">
+      <button class="btn-secondary" onclick="closeModal('modal-gen-invoice')">Batal</button>
+      <button class="btn-primary" onclick="generateInvoice()">🧾 Generate Invoice</button>
     </div>
   </div>
 </div>
@@ -1773,12 +1819,21 @@ async function loadInvoice() {
   invoiceList = (data || []).map(inv => {
     const st = inv.status || 'Belum Bayar';
     return {
-      dbId       : inv.id,
-      id         : inv.nomor || inv.no_invoice || inv.id,
-      murid      : inv.murid || inv.nama_murid || '',
-      detail     : inv.detail || '',
-      nominal    : inv.nominal || 0,
-      status     : st,
+      dbId      : inv.id,
+      id        : inv.nomor || inv.no_invoice || inv.id,
+      murid     : inv.murid || inv.nama_murid || '',
+      detail    : inv.detail || '',
+      nominal   : inv.nominal || 0,
+      bulan     : inv.bulan || '',
+      biayaLes  : inv.biaya_les  || 0,
+      biayaBuku : inv.biaya_buku || 0,
+      diskon    : inv.diskon     || 0,
+      dpAmount  : inv.dp_amount  || 0,
+      isDP      : inv.is_dp      || false,
+      sesi      : inv.sesi       || 4,
+      durasi    : inv.durasi     || 60,
+      catatan   : inv.catatan    || '',
+      status    : st,
       statusColor: st === 'Sudah Bayar' ? 'green' : st === 'Menunggu Konfirmasi' ? 'gold' : 'red',
     };
   });
@@ -2245,32 +2300,126 @@ function openSlipGaji(idx) {
   openModal('modal-slip-gaji');
 }
 
-function previewInvoice() {
-  const logic = parseInt(document.getElementById('inv-logic').value);
-  const murid = document.getElementById('inv-murid').value;
-  const box = document.getElementById('inv-preview');
-  box.style.display = 'block';
-  if (murid === 'Semua Murid Aktif') {
-    const aktif = muridList.filter(m => m.status === 'Aktif');
-    box.innerHTML = `<div style="font-weight:700;margin-bottom:10px;color:var(--accent);">Preview — ${logic} sesi/murid</div>` +
-      aktif.map(m => {
-        const total = m.fee * logic;
-        return `<div style="display:flex;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border);font-size:12px;">
-          <span>${m.nama}</span>
-          <span style="color:var(--gold);font-weight:700;">Rp ${total.toLocaleString('id-ID')}</span>
-        </div>`;
-      }).join('') +
-      `<div style="margin-top:8px;font-size:13px;font-weight:700;color:var(--accent);">Total: Rp ${aktif.reduce((s,m) => s + m.fee*logic, 0).toLocaleString('id-ID')}</div>`;
-  } else {
-    const m = muridList.find(x => x.nama === murid) || muridList[0];
-    box.innerHTML = `<div style="font-weight:700;color:var(--accent);">${m.nama} — ${logic} sesi × Rp ${m.fee.toLocaleString('id-ID')} = <span style="color:var(--gold);">Rp ${(m.fee*logic).toLocaleString('id-ID')}</span></div>`;
+// ─── INVOICE MODAL HELPERS ───
+function openGenInvoice() {
+  // Populate murid dropdown
+  const ms = document.getElementById('inv-murid');
+  if (ms) {
+    ms.innerHTML = '<option value="">— Pilih Murid —</option>' +
+      muridList.filter(m => m.status === 'Aktif')
+        .map(m => `<option value="${m.dbId}" data-fee="${m.fee||0}">${m.nama}</option>`).join('');
   }
+  // Populate bulan dropdown (current + next 6 months)
+  const bulanEl = document.getElementById('inv-bulan');
+  if (bulanEl) {
+    const names = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+    const now = new Date();
+    bulanEl.innerHTML = '';
+    for (let i = 0; i < 6; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth() + i, 1);
+      const val = d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0');
+      const lbl = names[d.getMonth()] + ' ' + d.getFullYear();
+      const opt = document.createElement('option');
+      opt.value = val; opt.textContent = lbl;
+      if (i === 0) opt.selected = true;
+      bulanEl.appendChild(opt);
+    }
+  }
+  // Reset fields
+  ['inv-biaya-les','inv-biaya-buku','inv-diskon','inv-dp'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.value = 0;
+  });
+  const dpCheck = document.getElementById('inv-dp-check');
+  if (dpCheck) dpCheck.checked = false;
+  const dpEl = document.getElementById('inv-dp');
+  if (dpEl) dpEl.disabled = true;
+  document.getElementById('inv-total-display').textContent = 'Rp 0';
+  document.getElementById('inv-catatan').value = '';
+  openModal('modal-gen-invoice');
 }
 
-function generateInvoice() {
-  previewInvoice();
+function onInvMuridChange() {
+  const sel = document.getElementById('inv-murid');
+  const fee = parseInt(sel.options[sel.selectedIndex]?.dataset?.fee || 0);
+  const sesi = parseInt(document.getElementById('inv-sesi').value) || 4;
+  document.getElementById('inv-biaya-les').value = fee * sesi;
+  updateInvTotal();
+}
+
+function onInvSesiChange() {
+  const sel = document.getElementById('inv-murid');
+  const fee = parseInt(sel.options[sel.selectedIndex]?.dataset?.fee || 0);
+  const sesi = parseInt(document.getElementById('inv-sesi').value) || 4;
+  if (fee > 0) document.getElementById('inv-biaya-les').value = fee * sesi;
+  updateInvTotal();
+}
+
+function toggleInvDP() {
+  const checked = document.getElementById('inv-dp-check').checked;
+  document.getElementById('inv-dp').disabled = !checked;
+  if (!checked) document.getElementById('inv-dp').value = 0;
+  updateInvTotal();
+}
+
+function updateInvTotal() {
+  const les  = parseInt(document.getElementById('inv-biaya-les').value)  || 0;
+  const buku = parseInt(document.getElementById('inv-biaya-buku').value) || 0;
+  const dis  = parseInt(document.getElementById('inv-diskon').value)     || 0;
+  const dp   = parseInt(document.getElementById('inv-dp').value)         || 0;
+  const total = les + buku - dis + dp;
+  document.getElementById('inv-total-display').textContent = 'Rp ' + Math.max(0, total).toLocaleString('id-ID');
+}
+
+function previewInvoice() { /* kept for compat */ }
+
+async function generateInvoice() {
+  const muridSel = document.getElementById('inv-murid');
+  const dbId = muridSel.value;
+  if (!dbId) { showToast('Pilih murid dulu!', 'error'); return; }
+  const muridNama = muridSel.options[muridSel.selectedIndex].textContent;
+  const bulan   = document.getElementById('inv-bulan').value;         // "2026-06"
+  const sesi    = parseInt(document.getElementById('inv-sesi').value) || 4;
+  const durasi  = parseInt(document.getElementById('inv-durasi').value) || 60;
+  const les     = parseInt(document.getElementById('inv-biaya-les').value)  || 0;
+  const buku    = parseInt(document.getElementById('inv-biaya-buku').value) || 0;
+  const diskon  = parseInt(document.getElementById('inv-diskon').value)     || 0;
+  const dpAmt   = parseInt(document.getElementById('inv-dp').value)         || 0;
+  const catatan = document.getElementById('inv-catatan').value.trim();
+  const nominal = les + buku - diskon + dpAmt;
+  const isDP    = document.getElementById('inv-dp-check').checked;
+
+  // nomor: V-YYYYMMDD + 3 digit counter
+  const today = new Date();
+  const dd = String(today.getDate()).padStart(2,'0');
+  const mm = String(today.getMonth()+1).padStart(2,'0');
+  const yy = today.getFullYear();
+  const seq = String(invoiceList.length + 1).padStart(3,'0');
+  const nomor = `V-${yy}${mm}${dd}${seq}`;
+
+  const payload = {
+    nomor,
+    murid      : muridNama,
+    bulan,
+    detail     : `${sesi} sesi × ${durasi} mnt`,
+    nominal,
+    biaya_les  : les,
+    biaya_buku : buku,
+    diskon,
+    dp_amount  : isDP ? dpAmt : 0,
+    is_dp      : isDP,
+    sesi,
+    durasi,
+    catatan,
+    status     : 'Belum Bayar',
+    created_at : new Date().toISOString(),
+  };
+
+  const { error } = await sb.from('invoice').insert(payload);
+  if (error) { showToast('Gagal generate: ' + error.message, 'error'); return; }
+  await loadInvoice();
   closeModal('modal-gen-invoice');
-  showToast('Invoice berhasil digenerate!', 'success');
+  showToast('Invoice ' + nomor + ' berhasil dibuat! ✅', 'success');
   navigateTo('invoice');
 }
 
@@ -3177,6 +3326,118 @@ function renderKalender() {
 // ═══════════════════════════════════════════
 // INVOICE ADMIN
 // ═══════════════════════════════════════════
+function printInvoicePDF(idx) {
+  const inv = invoiceList[idx];
+  if (!inv) return;
+  const bulanNames = ['Januari','Februari','Maret','April','Mei','Juni','Juli','Agustus','September','Oktober','November','Desember'];
+  let bulanLabel = inv.bulan || inv.detail || '';
+  if (inv.bulan && inv.bulan.includes('-')) {
+    const [y,m] = inv.bulan.split('-');
+    bulanLabel = bulanNames[parseInt(m)-1] + ' ' + y;
+  }
+  const tglInv = new Date(inv.created_at || Date.now()).toLocaleDateString('id-ID',{day:'2-digit',month:'2-digit',year:'numeric'}).replace(/\//g,'/');
+  const fmt = n => 'Rp' + n.toLocaleString('id-ID') + ',00';
+
+  const rows = [];
+  if (inv.biayaLes > 0 || (!inv.biayaLes && inv.nominal > 0)) {
+    const les = inv.biayaLes || inv.nominal;
+    rows.push({ desc: `Biaya Les ${bulanLabel} — ${inv.durasi||60} Menit`, qty: inv.sesi||1, sat: Math.round(les/(inv.sesi||1)), total: les });
+  }
+  if (inv.biayaBuku > 0) rows.push({ desc: `Biaya Buku — ${bulanLabel}`, qty: 1, sat: inv.biayaBuku, total: inv.biayaBuku });
+  if (inv.diskon > 0)    rows.push({ desc: `Diskon`, qty: 1, sat: -inv.diskon, total: -inv.diskon });
+  if (inv.isDP && inv.dpAmount > 0) rows.push({ desc: `DP Lesson ${bulanLabel}`, qty: 1, sat: inv.dpAmount, total: inv.dpAmount });
+
+  const w = window.open('','_blank','width=900,height=700');
+  w.document.write(`<!DOCTYPE html><html><head><meta charset="UTF-8">
+<title>Invoice ${inv.id} — ${inv.murid}</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:Arial,sans-serif;font-size:13px;color:#222;background:#fff;padding:40px;}
+  .header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:32px;}
+  .logo-area{}
+  .logo-text{font-size:28px;font-weight:900;letter-spacing:-1px;color:#1a3a6b;}
+  .logo-sub{font-size:8px;letter-spacing:3px;color:#888;text-transform:uppercase;}
+  .company{margin-top:12px;}
+  .company strong{font-size:14px;display:block;margin-bottom:4px;}
+  .company span{font-size:11px;color:#555;display:block;line-height:1.7;}
+  .receipt-title{font-size:32px;font-weight:300;color:#1a3a6b;text-align:right;}
+  .meta{text-align:right;margin-top:12px;}
+  .meta table{margin-left:auto;}
+  .meta td{font-size:12px;padding:2px 0;}
+  .meta td:first-child{color:#555;padding-right:20px;}
+  .meta td:last-child{font-weight:600;}
+  .divider{border:none;border-top:2px solid #1a3a6b;margin:24px 0 0;}
+  .divider2{border:none;border-top:1px solid #ccc;margin:0 0 16px;}
+  .items{width:100%;border-collapse:collapse;margin-bottom:16px;}
+  .items thead td{font-size:11px;font-weight:700;color:#1a3a6b;text-transform:uppercase;letter-spacing:.5px;padding:10px 8px;border-bottom:2px solid #1a3a6b;}
+  .items tbody tr{background:#fff;}
+  .items tbody tr:nth-child(odd){background:#f0f6ff;}
+  .items tbody td{padding:10px 8px;font-size:12px;border-bottom:1px solid #e8e8e8;}
+  .items tfoot td{padding:8px;font-size:12px;}
+  .col-desc{width:50%;}
+  .col-qty,.col-sat,.col-total{width:16.66%;text-align:right;}
+  .total-row td{font-weight:700;font-size:13px;border-top:2px solid #1a3a6b;color:#1a3a6b;}
+  .footer{display:grid;grid-template-columns:1fr 1fr;gap:40px;margin-top:32px;}
+  .footer-block strong{font-size:12px;text-transform:uppercase;letter-spacing:.5px;display:block;margin-bottom:8px;}
+  .footer-block span{font-size:11px;color:#555;display:block;line-height:1.8;}
+  .tagline{text-align:center;font-style:italic;font-weight:700;font-size:12px;color:#555;margin-top:40px;letter-spacing:1px;}
+  @media print{body{padding:20px;}button{display:none!important;}}
+</style>
+</head><body>
+<div class="header">
+  <div class="logo-area">
+    <div class="logo-text">&#9644;ANOTES</div>
+    <div class="logo-sub">Studio by —</div>
+    <div class="company">
+      <strong>PIANOTES STUDIO</strong>
+      <span>Jakarta Utara, 14450</span>
+      <span>0819-1957-1000</span>
+      <span>pianotes.studio@gmail.com</span>
+    </div>
+  </div>
+  <div>
+    <div class="receipt-title">Payment Receipt</div>
+    <div class="meta">
+      <table>
+        <tr><td>NO. PEMBAYARAN</td><td>${inv.id}</td></tr>
+        <tr><td>TANGGAL</td><td>${tglInv}</td></tr>
+        <tr><td>ID PELANGGAN</td><td>VIN-${String(idx+1).padStart(7,'0')}</td></tr>
+      </table>
+    </div>
+  </div>
+</div>
+<hr class="divider"><hr class="divider2">
+<table class="items">
+  <thead><tr><td class="col-desc">DESKRIPSI</td><td class="col-qty" style="text-align:right">KUANTITAS</td><td class="col-sat" style="text-align:right">JUMLAH</td><td class="col-total" style="text-align:right">TOTAL</td></tr></thead>
+  <tbody>
+    ${rows.map(r=>`<tr><td class="col-desc">${r.desc}</td><td class="col-qty">${r.qty.toFixed(2)}</td><td class="col-sat">${fmt(Math.abs(r.sat))}</td><td class="col-total" style="font-weight:700">${r.total<0?'('+fmt(Math.abs(r.total))+')':fmt(r.total)}</td></tr>`).join('')}
+    <tr><td colspan="3"></td><td class="col-total">Rp0,00</td></tr>
+  </tbody>
+  <tfoot><tr class="total-row"><td class="col-desc" colspan="3" style="text-align:right;padding-right:16px;">TOTAL PEMBAYARAN</td><td class="col-total">${fmt(inv.nominal)}</td></tr></tfoot>
+</table>
+<div class="footer">
+  <div class="footer-block">
+    <strong>Metode Pembayaran</strong>
+    <span>TRANSFER BANK</span>
+    <span>BANK BCA</span>
+    <span>NO. REK: [No. Rekening]</span>
+    <span>A/N: [Nama Pemilik]</span>
+  </div>
+  <div class="footer-block">
+    <strong>Konfirmasi Pembayaran</strong>
+    <span>ADMIN PIANOTES STUDIO</span>
+    <span>0819-1957-1000</span>
+  </div>
+</div>
+${inv.catatan ? `<div style="margin-top:20px;font-size:11px;color:#555;">Catatan: ${inv.catatan}</div>` : ''}
+<p class="tagline">TERIMA KASIH ATAS KERJA SAMA ANDA!</p>
+<div style="text-align:center;margin-top:24px;">
+  <button onclick="window.print()" style="padding:10px 28px;background:#1a3a6b;color:#fff;border:none;border-radius:6px;font-size:13px;cursor:pointer;">🖨️ Cetak / Simpan PDF</button>
+</div>
+</body></html>`);
+  w.document.close();
+}
+
 function renderInvoice() {
   const sudahBayar = invoiceList.filter(i => i.status==='Sudah Bayar').reduce((s,i)=>s+i.nominal,0);
   const menunggu = invoiceList.filter(i => i.status==='Menunggu Konfirmasi').reduce((s,i)=>s+i.nominal,0);
@@ -3186,7 +3447,7 @@ function renderInvoice() {
       <div class="section-title">Invoice Juni 2026</div>
       <div style="display:flex;gap:8px;">
         <button class="btn-sm btn-outline" onclick="showToast('Export PDF sedang diproses...','info')">Export PDF</button>
-        <button class="btn-sm btn-gold" onclick="openModal('modal-gen-invoice')">Generate Invoice</button>
+        <button class="btn-sm btn-gold" onclick="openGenInvoice()">+ Generate Invoice</button>
       </div>
     </div>
     <div class="stats-grid" style="grid-template-columns:repeat(4,1fr);">
@@ -3210,7 +3471,7 @@ function renderInvoice() {
                 <td>
                   <div style="display:flex;gap:6px;flex-wrap:wrap;">
                     ${inv.status==='Menunggu Konfirmasi' ? `<button class="btn-sm btn-gold" onclick="openKonfirmasi(${idx})">✓ Konfirmasi</button>` : ''}
-                    <button class="btn-sm btn-ghost" onclick="showToast('Download invoice...','info')">📥</button>
+                    <button class="btn-sm btn-ghost" onclick="printInvoicePDF(${idx})" title="Cetak / Simpan PDF">📥 PDF</button>
                     <button class="btn-sm btn-outline" onclick="showToast('Link WA disalin!','success')">🔗 WA</button>
                     <button class="btn-sm btn-outline" style="color:var(--red);border-color:rgba(224,92,106,0.4);padding:5px 8px;" onclick="deleteInvoice(${idx})">🗑️</button>
                   </div>
